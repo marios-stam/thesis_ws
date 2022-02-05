@@ -1,0 +1,6 @@
+[submodule "src/drone_path_planning"]
+	path = src/drone_path_planning
+	url = https://github.com/marios-stam/drone_path_planning.git
+[submodule "src/catenaries"]
+	path = src/catenaries
+	url = https://github.com/marios-stam/catenaries.git
