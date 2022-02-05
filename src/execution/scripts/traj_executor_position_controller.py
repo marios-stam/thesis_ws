@@ -6,7 +6,11 @@ import rospy
 from rospy.client import INFO
 import numpy as np
 from geometry_msgs.msg import PoseStamped
-from crazyswarm.msg import TrajectoryPolynomialPieceMarios
+try:
+    from execution.msg import TrajectoryPolynomialPieceMarios
+except:
+    from crazyswarm.msg import TrajectoryPolynomialPieceMarios
+
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
@@ -15,7 +19,7 @@ import uav_trajectory
 import sys
 
 
-def handle_new_trajectory(piece_pol: TrajectoryPolynomialPieceMarios):
+def handle_new_trajectory(piece_pol):
     cf_id = piece_pol.cf_id
     print("Received new trajectory with cfid:", cf_id, "...")
 
@@ -28,22 +32,27 @@ class TrajectoryExecutor_Position_Controller:
         self.odom = None
 
     def odometry_callback(self, odom: Odometry):
-        print("Received Odometry")
         self.odom = odom
 
-    def wait_until_get_to_pose(self, x, y, z, yaw, threshold=0.1):  # threshold propably needs tuning
+    # threshold propably needs tuning
+    def wait_until_get_to_pose(self, x, y, z, yaw, threshold=0.4):
         # Wait until the crazyflie gets to the pose-->nomrm(error) is smaller than threshold value
-        if self.odom is None:
-            raise Exception("No odometry received yet")
+        # if self.odom is None:
+        #     raise Exception("No odometry received yet")
 
         des_pose = PoseStamped()
         des_pose.pose.position.x, des_pose.pose.position.y, des_pose.pose.position.z = x, y, z
 
-        while True:
-            if np.linalg.norm(np.array(des_pose.pose.position) - np.array(self.odom.pose.pose.position)) < threshold:
-                break
+        error = np.inf
+        while error > threshold:
+            des = np.array(
+                [des_pose.pose.position.x, des_pose.pose.position.y, des_pose.pose.position.z])
+            actual = np.array([self.odom.pose.pose.position.x,
+                              self.odom.pose.pose.position.y, self.odom.pose.pose.position.z])
+            # print("Waiting to go to pose...")
+            error = np.linalg.norm(des - actual)
 
-    def receive_trajectory(self, piece_pol: TrajectoryPolynomialPieceMarios):
+    def receive_trajectory(self, piece_pol):
         print("Crazyflie with id:", executor_id, "received trajectory...")
         cfid = piece_pol.cf_id
 
@@ -63,7 +72,8 @@ class TrajectoryExecutor_Position_Controller:
         print("yaw:", yaw.shape)
         print("durations:", durations.shape)
 
-        matrix = np.zeros((lines, 1+8*4))  # 8 coeffs per x,y,z,yaw + 1 for duration
+        # 8 coeffs per x,y,z,yaw + 1 for duration
+        matrix = np.zeros((lines, 1+8*4))
         matrix[:, 0] = durations.flatten()
         matrix[:, 1:9] = x
         matrix[:, 9:17] = y
@@ -76,8 +86,13 @@ class TrajectoryExecutor_Position_Controller:
 
     def go_to_pose(self, x, y, z, yaw):
         p = PoseStamped()
+        p.header.stamp = rospy.Time.now()
+
         p.pose.position.x, p.pose.position.y, p.pose.position.z = x, y, z
-        p.pose.orientation = tf.transformations.quaternion_from_euler(0, 0, yaw)
+        q = tf.transformations.quaternion_from_euler(0, 0, yaw)
+        p.pose.orientation.x, p.pose.orientation.y, p.pose.orientation.z, p.pose.orientation.w = q[
+            0], q[1], q[2], q[3]
+
         pos_pub.publish(p)
 
     def get_traj_start_pose(self) -> PoseStamped:
@@ -86,7 +101,8 @@ class TrajectoryExecutor_Position_Controller:
         start_pose = PoseStamped()
         start_pose.pose.position.x, start_pose.pose.position.y, start_pose.pose.position.z = eval.pos[
             0], eval.pos[1], eval.pos[2]
-        start_pose.pose.orientation = tf.transformations.quaternion_from_euler(0, 0, eval.yaw)
+        start_pose.pose.orientation = tf.transformations.quaternion_from_euler(
+            0, 0, eval.yaw)
 
         return start_pose
 
@@ -100,7 +116,8 @@ class TrajectoryExecutor_Position_Controller:
 
     def land(self):
         print("Landing...")
-        safety_land_publisher.publish("Land")  # Land string is not necessary, but it is nice to have
+        # Land string is not necessary, but it is nice to have
+        safety_land_publisher.publish("Land")
 
     def execute_trajectory(self, matrix):
         file_name = "piecewise_pole_{}.csv".format(executor_id)
@@ -121,7 +138,8 @@ class TrajectoryExecutor_Position_Controller:
         # feed waypoints to position controller
         start_pose = self.get_traj_start_pose()
 
-        self.go_to_pose(start_pose.pose.position.x, start_pose.pose.position.y, start_pose.pose.position.z, yaw=0)
+        self.go_to_pose(start_pose.pose.position.x,
+                        start_pose.pose.position.y, start_pose.pose.position.z, yaw=0)
         self.wait_until_get_to_pose(start_pose.pose.position.x, start_pose.pose.position.y,
                                     start_pose.pose.position.z, yaw=0)
 
@@ -145,15 +163,15 @@ class TrajectoryExecutor_Position_Controller:
 
 
 def test_system():
-    while executor_pos.odom == None:
-        print("Waiting Odometry...")
+    # while executor_pos.odom == None:
+    #     pass
 
-    executor_pos.take_off(height=0.5)  # takes off and waits until it is at the desired height
-    rospy.sleep(2)
-
-    # executor_pos.go_to_pose(0.5, 0.5, 0.5, yaw=0)  # goes to the desired position
-    # executor_pos.wait_until_get_to_pose(0.5, 0.5, 0.5, yaw=0)  # waits until it is at the desired position
+    # executor_pos.take_off(height=0.5)  # takes off and waits until it is at the desired height
     # rospy.sleep(2)
+    x, y, z = 1.5, 4.5, 1.5
+    executor_pos.go_to_pose(x, y, z, yaw=0)  # goes to the desired position
+    # executor_pos.wait_until_get_to_pose(x, y, z, yaw=0)  # waits until it is at the desired position
+    rospy.sleep(2)
 
     executor_pos.land()
 
@@ -165,8 +183,18 @@ if __name__ == "__main__":
     executor_id = int(sys.argv[2])
     print("Executor id:", executor_id)
 
-    safety_land_publisher = rospy.Publisher('safety_land', String, queue_size=10)
+    safety_land_publisher = rospy.Publisher(
+        'safety_land', String, queue_size=10)
     pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
+
+    print("Waiting to connect to reference topic..")
+    while pos_pub.get_num_connections() < 1:
+        if rospy.is_shutdown():
+            sys.exit()
+
+    print("Connected to reference topic")
+
+    print("Got reference...")
 
     executor_pos = TrajectoryExecutor_Position_Controller()
     odometry_sub = rospy.Subscriber('/pixy/vicon/demo_crazyflie4/demo_crazyflie4/odom',
