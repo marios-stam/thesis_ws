@@ -1,4 +1,7 @@
 /.vscode
 build
 devel
-crazyflie_ros
+
+src/libviconstream
+src/ros_viconstream
+src/crazyflie_ros
