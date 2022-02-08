@@ -4,3 +4,6 @@
 [submodule "src/catenaries"]
 	path = src/catenaries
 	url = https://github.com/marios-stam/catenaries.git
+[submodule "src/crazyflie_ros"]
+	path = src/crazyflie_ros
+	url = ./src/crazyflie_ros
