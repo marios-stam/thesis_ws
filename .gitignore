@@ -4,5 +4,8 @@ devel
 
 src/libviconstream
 src/ros_viconstream
+logs
+.catkin_tools
+bags
 
 *.pyc

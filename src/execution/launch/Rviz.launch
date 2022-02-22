@@ -13,7 +13,7 @@
 		<!-- <arg name="sim" value="true" /> -->
 	<!-- </include> -->
     
-	<!-- <node name="traj_executor1" pkg="crazyswarm" type="traj_executor.py" output="screen" args="id 1" /> -->
-	<!-- <node name="traj_executor2" pkg="crazyswarm" type="traj_executor.py" output="screen" args="id 2" /> -->
+	<!-- <node name="traj_executor1" pkg="crazyflie_demo" type="traj_executor.py" output="screen" args="id 1" /> -->
+	<!-- <node name="traj_executor2" pkg="crazyflie_demo" type="traj_executor.py" output="screen" args="id 2" /> -->
 
 </launch>

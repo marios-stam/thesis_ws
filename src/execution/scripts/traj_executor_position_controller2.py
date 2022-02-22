@@ -152,7 +152,7 @@ class TrajectoryExecutor_Position_Controller:
 
         else:
             # If not relative the drone has to go first at the starting position
-            offset = [0, 4, 1]
+            offset = [-1, 4, 1]
             start_pose = self.get_traj_start_pose()
             print("start_pose:", start_pose.pose.position.x,
                   start_pose.pose.position.y, start_pose.pose.position.z)
@@ -196,7 +196,9 @@ class TrajectoryExecutor_Position_Controller:
             pos, yaw = evaluation.pos, evaluation.yaw
             x, y, z = pos[0], pos[1], pos[2]
 
-            print("t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
+            print("t:", t, "x:", x+offset[0], "y:", y +
+                  offset[1], "z:", z+offset[2], "yaw:", yaw)
+
             self.go_to_pose(x, y, z, yaw, offset=offset)
             self.wait_until_get_to_pose(
                 x+offset[0], y+offset[1], z+offset[2], yaw, threshold=0.15)
@@ -247,15 +249,15 @@ def test_system_trajectory():
 
 
 if __name__ == "__main__":
-    rospy.init_node("Traj_Executor_Position_Controller")
+    rospy.init_node("Traj_Executor_Position_Controller2")
 
     # get command line arguments
     executor_id = int(sys.argv[2])
     print("Executor id:", executor_id)
 
     safety_land_publisher = rospy.Publisher(
-        'safety_land', String, queue_size=10)
-    pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
+        'safety_land2', String, queue_size=10)
+    pos_pub = rospy.Publisher('reference2', PoseStamped, queue_size=10)
 
     print("Waiting to connect to reference topic..")
     while pos_pub.get_num_connections() < 1:
@@ -265,9 +267,9 @@ if __name__ == "__main__":
     print("Connected to reference topic")
 
     print("Got reference...")
-
+    cf_name = "demo_crazyflie6"
     executor_pos = TrajectoryExecutor_Position_Controller()
-    odometry_sub = rospy.Subscriber('/pixy/vicon/demo_crazyflie4/demo_crazyflie4/odom',
+    odometry_sub = rospy.Subscriber('/pixy/vicon/{}/{}/odom'.format(cf_name, cf_name),
                                     Odometry, executor_pos.odometry_callback)
 
     # Subscribe to trajectory topic and then execute it after going to the first waypoint

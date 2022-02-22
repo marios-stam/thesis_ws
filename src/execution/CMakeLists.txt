@@ -194,9 +194,10 @@ include_directories(
 install(PROGRAMS
   scripts/droneMarkerVis.py
   scripts/traj_executor_position_controller.py
+  scripts/traj_executor_position_controller2.py
   scripts/droneMarkerVisMarios.py
   scripts/crazyflie_controller.py
-  scripts/crazyflie_controller.py
+  scripts/crazyflie_controller2.py
   
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

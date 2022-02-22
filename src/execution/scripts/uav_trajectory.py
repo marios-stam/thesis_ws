@@ -55,21 +55,25 @@ class Polynomial4D:
     def eval(self, t):
         result = TrajectoryOutput()
         # flat variables
-        result.pos = np.array([self.px.eval(t), self.py.eval(t), self.pz.eval(t)])
+        result.pos = np.array(
+            [self.px.eval(t), self.py.eval(t), self.pz.eval(t)])
         result.yaw = self.pyaw.eval(t)
 
         # 1st derivative
         derivative = self.derivative()
-        result.vel = np.array([derivative.px.eval(t), derivative.py.eval(t), derivative.pz.eval(t)])
+        result.vel = np.array(
+            [derivative.px.eval(t), derivative.py.eval(t), derivative.pz.eval(t)])
         dyaw = derivative.pyaw.eval(t)
 
         # 2nd derivative
         derivative2 = derivative.derivative()
-        result.acc = np.array([derivative2.px.eval(t), derivative2.py.eval(t), derivative2.pz.eval(t)])
+        result.acc = np.array([derivative2.px.eval(
+            t), derivative2.py.eval(t), derivative2.pz.eval(t)])
 
         # 3rd derivative
         derivative3 = derivative2.derivative()
-        jerk = np.array([derivative3.px.eval(t), derivative3.py.eval(t), derivative3.pz.eval(t)])
+        jerk = np.array([derivative3.px.eval(
+            t), derivative3.py.eval(t), derivative3.pz.eval(t)])
 
         thrust = result.acc + np.array([0, 0, 9.81])  # add gravity
 
@@ -81,7 +85,8 @@ class Polynomial4D:
         jerk_orth_zbody = jerk - (np.dot(jerk, z_body) * z_body)
         h_w = jerk_orth_zbody / np.linalg.norm(thrust)
 
-        result.omega = np.array([-np.dot(h_w, y_body), np.dot(h_w, x_body), z_body[2] * dyaw])
+        result.omega = np.array(
+            [-np.dot(h_w, y_body), np.dot(h_w, x_body), z_body[2] * dyaw])
         return result
 
 
@@ -93,9 +98,20 @@ class Trajectory:
     def n_pieces(self):
         return len(self.polynomials)
 
-    def loadcsv(self, filename):
-        data = np.loadtxt(filename, delimiter=",", skiprows=0, usecols=range(33))
-        self.polynomials = [Polynomial4D(row[0], row[1:9], row[9:17], row[17:25], row[25:33]) for row in data]
+    def loadcsv(self, filename, skip_first_row):
+        skip_rows = 1 if skip_first_row else 0
+
+        data = np.loadtxt(filename, delimiter=",",
+                          skiprows=skip_rows, usecols=range(33))
+
+        print(data.shape)
+        if len(data) == 33:
+            data = data.reshape(1, 33)
+
+        self.polynomials = [Polynomial4D(
+            row[0], row[1:9], row[9:17], row[17:25],
+            row[25:33]) for row in data]
+
         self.duration = np.sum(data[:, 0])
 
     def eval(self, t):
