@@ -6,6 +6,8 @@ import rospy
 from rospy.client import INFO
 import numpy as np
 from geometry_msgs.msg import PoseStamped
+import simpleaudio
+
 try:
     from execution.msg import TrajectoryPolynomialPieceMarios
 except:
@@ -17,6 +19,13 @@ import time
 import tf
 import uav_trajectory
 import sys
+
+
+def beep():
+    wave_obj = simpleaudio.WaveObject.from_wave_file(
+        "/home/marios/thesis_ws/src/execution/resources/beep.wav")
+    play_obj = wave_obj.play()
+    play_obj.wait_done()
 
 
 def handle_new_trajectory(piece_pol):
@@ -33,6 +42,14 @@ class TrajectoryExecutor_Position_Controller:
 
     def odometry_callback(self, odom: Odometry):
         self.odom = odom
+
+    def wait_for_odometry(self):
+        while self.odom == None:
+            # print("Waiting for odom...")
+            if rospy.is_shutdown():
+                print(
+                    'ctrl+c hit...Shutting down traj_executor_position_controller node...')
+                sys.exit()
 
     # threshold propably needs tuning
     def wait_until_get_to_pose(self, x, y, z, yaw, threshold=0.4):
@@ -187,6 +204,7 @@ class TrajectoryExecutor_Position_Controller:
         #     rate.sleep()
         t = 0
         dt = 0.1
+        beep()
         while not rospy.is_shutdown():
             t = t+dt
             if t > tr.duration:
@@ -207,10 +225,7 @@ class TrajectoryExecutor_Position_Controller:
 
 
 def test_system():
-    while executor_pos.odom == None:
-        print("Waiting for odom...")
-        pass
-
+    executor_pos.wait_for_odometry()
     # executor_pos.take_off(height=0.5)  # takes off and waits until it is at the desired height
     # rospy.sleep(2)
     x, y, z = 0.5, 4.5, 1.5
@@ -225,10 +240,7 @@ def test_system():
 
 
 def test_system_trajectory():
-    while executor_pos.odom == None:
-        print("Waiting for odom...")
-        pass
-
+    executor_pos.wait_for_odometry()
     traj = uav_trajectory.Trajectory()
 
     # load trajectory file
@@ -247,11 +259,15 @@ def test_system_trajectory():
 
 
 if __name__ == "__main__":
-    rospy.init_node("Traj_Executor_Position_Controller")
+    rospy.init_node("Traj_Executor_Position_Controller", anonymous=True)
 
     # get command line arguments
-    executor_id = int(sys.argv[2])
-    print("Executor id:", executor_id)
+    cf_name = str(sys.argv[1])
+    common_prefix = "demo_crazyflie"
+    # get id after prefix
+    executor_id = int(cf_name[len(common_prefix):])
+
+    print("Executor postion controller with id:", executor_id)
 
     safety_land_publisher = rospy.Publisher(
         'safety_land', String, queue_size=10)

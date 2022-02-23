@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # license removed for brevity
+import sys
 import rospy
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
@@ -8,6 +9,8 @@ from geometry_msgs.msg import PoseStamped
 import time
 import numpy
 import math
+import simpleaudio
+
 xpos = 0
 ypos = 0
 zpos = 0
@@ -26,6 +29,13 @@ vz = 0
 roll = 0
 pitch = 0
 yaw = 0
+
+
+def beep():
+    wave_obj = simpleaudio.WaveObject.from_wave_file(
+        "/home/marios/thesis_ws/src/execution/resources/beep.wav")
+    play_obj = wave_obj.play()
+    play_obj.wait_done()
 
 
 def quaternion_to_euler(x, y, z, w):
@@ -78,9 +88,24 @@ def callback_safety(data):
 
 
 def controller():
-    cf_name = 'demo_crazyflie4'
+    global xref, yref, zref, integrator, land_flag, yawref
 
-    pub = rospy.Publisher(cf_name+'/cmd_vel', Twist, queue_size=1)
+    try:
+        cf_name = str(sys.argv[1])
+        xref = float(sys.argv[2])
+        yref = float(sys.argv[3])
+        zref = float(sys.argv[4])
+
+    except Exception as e:
+        print(e)
+
+    print("Crazyflie controller iniitalized with name:", cf_name)
+
+    print("initial xref:", xref)
+    print("initial yref:", yref)
+    print("initial zref:", zref)
+
+    pub = rospy.Publisher('/'+cf_name+'/cmd_vel', Twist, queue_size=1)
     rospy.init_node('controller', anonymous=True)
     sub = rospy.Subscriber(
         '/pixy/vicon/{}/{}/odom'.format(cf_name, cf_name), Odometry, callback)
@@ -89,10 +114,6 @@ def controller():
     sub_ref = rospy.Subscriber('reference', PoseStamped, callback_ref)
 
     rate = rospy.Rate(20)  # 20hz
-    global xref, yref, zref, integrator, land_flag, yawref
-    xref = 0
-    yref = 4
-    zref = 1
     yawref = 0
     to_thrust = 0.6
     land_flag = 0
@@ -111,6 +132,7 @@ def controller():
     k_y = 1
     k_dy = 0.2
 
+    # beep()
     while not rospy.is_shutdown():
 
         # Apply rotations around the z-axis (yaw angle)
@@ -121,7 +143,7 @@ def controller():
         xref_body = math.cos(yaw)*xref + math.sin(yaw)*yref
         yref_body = -math.sin(yaw)*xref + math.cos(yaw)*yref
 
-        print(xref, yref, zref, yawref)
+        print(cf_name, xref, yref, zref, yawref)
 
         # Implement your controller
         integrator = integrator + 0.001*(zref-zpos)
