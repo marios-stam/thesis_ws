@@ -187,21 +187,7 @@ class TrajectoryExecutor_Position_Controller:
         # frequency of sending references to the controller in hz
         rate = rospy.Rate(100.0)  # maybe need to increase this
         t0 = rospy.get_time()
-        # while not rospy.is_shutdown():
-        #     t = rospy.get_time()-t0
-        #     if t > tr.duration:
-        #         break
 
-        #     evaluation = tr.eval(t)
-        #     pos, yaw = evaluation.pos, evaluation.yaw
-        #     x, y, z = pos[0], pos[1], pos[2]
-
-        #     print("t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
-        #     self.go_to_pose(x, y, z, yaw, offset=offset)
-        #     self.wait_until_get_to_pose(
-        #         x+offset[0], y+offset[1], z+offset[2], yaw, threshold=0.2)
-
-        #     rate.sleep()
         t = 0
         dt = 0.1
         beep()

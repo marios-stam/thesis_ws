@@ -23,7 +23,7 @@ find_package(PCL REQUIRED)
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -194,10 +194,10 @@ include_directories(
 install(PROGRAMS
   scripts/droneMarkerVis.py
   scripts/traj_executor_position_controller.py
-  scripts/traj_executor_position_controller2.py
+  scripts/leader_traj_executor_velocity_controller.py
+  scripts/follower_traj_executor_velocity_controller.py
   scripts/droneMarkerVisMarios.py
   scripts/crazyflie_controller.py
-  scripts/crazyflie_controller2.py
   
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
