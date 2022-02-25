@@ -169,11 +169,11 @@ class TrajectoryExecutor_Position_Controller:
 
         else:
             # If not relative the drone has to go first at the starting position
-            offset = [0, 4, 1]
+            offset = [0, 0, 0]
             start_pose = self.get_traj_start_pose()
             print("start_pose:", start_pose.pose.position.x,
                   start_pose.pose.position.y, start_pose.pose.position.z)
-            rospy.sleep(3)
+            rospy.sleep(1)
 
             self.go_to_pose(start_pose.pose.position.x + offset[0],
                             start_pose.pose.position.y + offset[1],
@@ -182,7 +182,7 @@ class TrajectoryExecutor_Position_Controller:
             self.wait_until_get_to_pose(start_pose.pose.position.x, start_pose.pose.position.y,
                                         start_pose.pose.position.z, yaw=0, threshold=0.1)
 
-        rospy.sleep(3)
+        rospy.sleep(1)
 
         # frequency of sending references to the controller in hz
         rate = rospy.Rate(100.0)  # maybe need to increase this
@@ -205,6 +205,62 @@ class TrajectoryExecutor_Position_Controller:
             self.go_to_pose(x, y, z, yaw, offset=offset)
             self.wait_until_get_to_pose(
                 x+offset[0], y+offset[1], z+offset[2], yaw, threshold=0.15)
+
+            rate.sleep()
+
+        self.land()
+
+    def execute_trajectory_testing_leader_follower(self, matrix, relative=False):
+        file_name = "piecewise_pole_test_{}.csv".format(executor_id)
+
+        np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
+        tr = uav_trajectory.Trajectory()
+
+        # TODO:Load trajectory without using file
+        tr.loadcsv(file_name, skip_first_row=False)
+        self.tr = tr
+        print("duration:", tr.duration)
+
+        if relative:
+            # if trajectory relative to current position
+            # the drone won't have to move before starting the trajector
+            # offset = [self.odom.pose.pose.position.x,
+            #           self.odom.pose.pose.position.y, self.odom.pose.pose.position.z]
+            offset = [0, 4, 1]
+
+        else:
+            # If not relative the drone has to go first at the starting position
+            offset = [0, 0, 0]
+            start_pose = self.get_traj_start_pose()
+            print("start_pose:", start_pose.pose.position.x,
+                  start_pose.pose.position.y, start_pose.pose.position.z)
+            rospy.sleep(3)
+
+            self.go_to_pose(start_pose.pose.position.x + offset[0],
+                            start_pose.pose.position.y + offset[1],
+                            start_pose.pose.position.z + offset[2], yaw=0)
+
+        rospy.sleep(3)
+
+        # frequency of sending references to the controller in hz
+        rate = rospy.Rate(0.5)  # maybe need to increase this
+        t0 = rospy.get_time()
+
+        t = 0
+        dt = 0.1
+        beep()
+        start_traj_publisher.publish("Start")
+        while not rospy.is_shutdown():
+            t = t+dt
+            if t > tr.duration:
+                break
+
+            evaluation = tr.eval(t)
+            pos, yaw = evaluation.pos, evaluation.yaw
+            x, y, z = pos[0], pos[1], pos[2]
+
+            print("Leader", "t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
+            self.go_to_pose(x, y, z, yaw, offset=offset)
 
             rate.sleep()
 
@@ -245,6 +301,27 @@ def test_system_trajectory():
     executor_pos.land()
 
 
+def test_leader_follower():
+    traj = uav_trajectory.Trajectory()
+
+    # load trajectory file
+    # traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
+
+    traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/simple_line.csv"
+    traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
+
+    # matrix = np.loadtxt(traj_file_name, delimiter=",",skiprows=1, usecols=range(33)).reshape(1, 33)
+    matrix = np.loadtxt(traj_file_name, delimiter=",",
+                        skiprows=1, usecols=range(33))
+
+    print(matrix.shape)
+    # executing trajectory
+    executor_pos.execute_trajectory_testing_leader_follower(
+        matrix, relative=False)
+
+    executor_pos.land()
+
+
 if __name__ == "__main__":
     rospy.init_node("Traj_Executor_Position_Controller", anonymous=True)
 
@@ -259,13 +336,17 @@ if __name__ == "__main__":
     safety_land_publisher = rospy.Publisher(
         'safety_land', String, queue_size=10)
     pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
+
     start_traj_publisher = rospy.Publisher(
         'start_trajectory', String, queue_size=10)
 
-    print("Waiting to connect to reference topic..")
-    while pos_pub.get_num_connections() < 1:
+    while start_traj_publisher.get_num_connections() < 1:
         if rospy.is_shutdown():
             sys.exit()
+    # print("Waiting to connect to reference topic..")
+    # while pos_pub.get_num_connections() < 1:
+    #     if rospy.is_shutdown():
+    #         sys.exit()
 
     print("Connected to reference topic")
 
@@ -280,6 +361,8 @@ if __name__ == "__main__":
 
     # test_system()  # Used to check the functionality of the system
 
-    test_system_trajectory()
+    # test_system_trajectory()
+
+    test_leader_follower()
 
     rospy.spin()

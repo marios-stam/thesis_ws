@@ -34,12 +34,18 @@ def handle_new_trajectory(piece_pol):
     print("Received new trajectory with cfid:", cf_id, "...")
 
     if cf_id == executor_id:
-        executor_pos.receive_trajectory(piece_pol)
+        executor_pos.receive_executor_trajectory(piece_pol)
+
+    elif cf_id == leader_id:
+        executor_pos.receive_leader_trajectory(piece_pol)
 
 
 class TrajectoryExecutor_Position_Controller:
     def __init__(self, ) -> None:
         self.odom = None
+        self.leader_started_trajectory_flag = False
+        self.traj_matcher = None
+        self.tr = None
 
     def odometry_callback(self, odom: Odometry):
         self.odom = odom
@@ -74,10 +80,28 @@ class TrajectoryExecutor_Position_Controller:
             error = np.linalg.norm(des - actual)
             time.sleep(0.1)
 
-    def receive_trajectory(self, piece_pol):
+    def receive_executor_trajectory(self, piece_pol):
         print("Crazyflie with id:", executor_id, "received trajectory...")
-        cfid = piece_pol.cf_id
 
+        matrix = TrajectoryExecutor_Position_Controller.build_matrix_from_traj_msg(
+            piece_pol)
+
+        file_name = "piecewise_pole_test_{}.csv".format(executor_id)
+        np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
+        tr = uav_trajectory.Trajectory()
+
+        # TODO:Load trajectory without using file
+        tr.loadcsv(file_name, skip_first_row=False)
+        self.tr = tr
+
+    def receive_leader_trajectory(self, piece_pol):
+        # Receives the leader trajectory and initialize the trajectory matcher with it
+        print("Crazyflie with id:", leader_id, "received leader trajectory...")
+        matrix = TrajectoryExecutor_Position_Controller.build_matrix_from_traj_msg(
+            piece_pol)
+        self.traj_matcher = trajectory_matcher_time_based(matrix)
+
+    def build_matrix_from_traj_msg(piece_pol):
         lines = int(len(piece_pol.poly_x)/8)
 
         print(len(piece_pol.poly_x))
@@ -102,16 +126,7 @@ class TrajectoryExecutor_Position_Controller:
         matrix[:, 17:25] = z
         matrix[:, 25:33] = yaw
 
-        self.matrix = matrix
-        self.traj_matcher = trajectory_matcher_time_based(matrix)
-
-        file_name = "piecewise_pole_test_{}.csv".format(executor_id)
-        np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
-        tr = uav_trajectory.Trajectory()
-
-        # TODO:Load trajectory without using file
-        tr.loadcsv(file_name, skip_first_row=False)
-        self.tr = tr
+        return matrix
 
     def go_to_pose(self, x, y, z, yaw, offset=[0, 0, 0]):
         p = PoseStamped()
@@ -168,7 +183,6 @@ class TrajectoryExecutor_Position_Controller:
             offset = [self.odom.pose.pose.position.x,
                       self.odom.pose.pose.position.y, self.odom.pose.pose.position.z]
             # offset = [0, 4, 1]
-
         else:
             # If not relative the drone has to go first at the starting position
             offset = [0, 4, 1]
@@ -210,13 +224,13 @@ class TrajectoryExecutor_Position_Controller:
         self.land()
 
     def receive_leader_pose(self, msg):
-        if not self.leader_started_trajectory_flag:
+        if self.leader_started_trajectory_flag == False:
             # Leader has not started the trajectory yet
             print("Leader has not started the trajectory yet")
             return 0
 
-        if self.traj_matcher == None:
-            print("traj_matcher hasn't been initialized!")
+        if self.traj_matcher == None or self.tr == None:
+            print("traj_matcher or self.tr hasn't been initialized!")
             print("Safety landing...")
             self.land()
             sys.exit(1)  # not sure if this is the right way to exit
@@ -226,17 +240,16 @@ class TrajectoryExecutor_Position_Controller:
         t = self.traj_matcher.get_corresponding_t(
             self.leader_pose.pose.position)
 
-        print("estimated t:", t)
-
         evaluation = self.tr.eval(t)
         pos, yaw = evaluation.pos, evaluation.yaw
         x, y, z = pos[0], pos[1], pos[2]
-        print("t:", t, "  ======> Going at :" "x:",
+        print("Follower:", "t:", t, "  ======> Going at :" "x:",
               x, "y:", y, "z:", z, "yaw:", yaw)
         offset = [-1, 4, 1]
         self.go_to_pose(x, y, z, yaw, offset=offset)
 
     def leader_started_trajectory(self, msg):
+        print("Leader started the trajectory")
         self.leader_started_trajectory_flag = True
 
 
@@ -311,11 +324,27 @@ def test_trajectory_matcher():
         rospy.sleep(3)
 
 
+def test_traj_matcher_general():
+    traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
+    matrix = np.loadtxt(traj_file_name, delimiter=",",
+                        skiprows=1, usecols=range(33))
+
+    executor_pos.matrix = matrix
+    executor_pos.traj_matcher = trajectory_matcher_time_based(matrix)
+
+    tr = uav_trajectory.Trajectory()
+    follower_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
+    tr.loadcsv(follower_traj_file_name, skip_first_row=True)
+    executor_pos.tr = tr
+
+
 if __name__ == "__main__":
     rospy.init_node("Traj_Executor_Position_Controller", anonymous=True)
 
     # get command line arguments
     cf_name = str(sys.argv[1])
+    leader_cf_name = str(sys.argv[2])
+
     common_prefix = "demo_crazyflie"
     # get id after prefix
     try:
@@ -325,16 +354,19 @@ if __name__ == "__main__":
         # if executed via roslaunch
         executor_id = int(cf_name[len(common_prefix):])
 
+    leader_id = int(cf_name[len(common_prefix):])
+
     print("Executor postion controller with id:", executor_id)
+    print("Leader postion controller with id:", leader_id)
 
     safety_land_publisher = rospy.Publisher(
         'safety_land', String, queue_size=10)
     pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
 
-    print("Waiting to connect to reference topic..")
-    while pos_pub.get_num_connections() < 1:
-        if rospy.is_shutdown():
-            sys.exit()
+    # print("Waiting to connect to reference topic..")
+    # while pos_pub.get_num_connections() < 1:
+    #     if rospy.is_shutdown():
+    #         sys.exit()
 
     print("Connected to reference topic")
 
@@ -347,13 +379,19 @@ if __name__ == "__main__":
     leader_sub = rospy.Subscriber(
         '/cf_leader/reference', PoseStamped, executor_pos.receive_leader_pose)
 
-    start_traj_sub = rospy.Publisher(
-        'start_trajectory', String, executor_pos.leader_started_trajectory)
+    start_traj_sub = rospy.Subscriber(
+        '/cf_leader/start_trajectory', String, executor_pos.leader_started_trajectory)
+
+    # Subscribe to trajectory topic and then execute it after going to the first waypoint
+    rospy.Subscriber(
+        'piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
 
     # test_system()  # Used to check the functionality of the system
 
     # test_system_trajectory()
 
-    test_trajectory_matcher()
+    # test_trajectory_matcher()
+
+    test_traj_matcher_general()
 
     rospy.spin()

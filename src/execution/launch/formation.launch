@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <launch>
-	<arg name="cf_1_name" value="demo_crazyflie5" />
+	<arg name="cf_leader_name" value="demo_crazyflie5" />
 	<!-- initial reference -->
 	<arg name="cf_1_x" value="0" /> 
 	<arg name="cf_1_y" value="4" />
 	<arg name="cf_1_z" value="1" />
 
-	<arg name="cf_2_name" value="demo_crazyflie6" />
+	<arg name="cf_follower_name" value="demo_crazyflie6" />
 	<!-- initial reference -->
   	<arg name="cf_2_x" value="-1" />
 	<arg name="cf_2_y" value=" 4" />
@@ -14,16 +14,17 @@
 
 
 	<group ns="cf_leader">
-		<node name="cf_controller" 	pkg="execution" type="crazyflie_controller.py"  args="$(arg cf_1_name) 
+		<node name="cf_controller" 	pkg="execution" type="crazyflie_controller.py"  args="$(arg cf_leader_name) 
 			$(arg cf_1_x) $(arg cf_1_y) $(arg cf_1_z)" />
-  		<node name="traj_executor" pkg="execution" type="traj_executor_position_controller.py" args="$(arg cf_1_name)" />
+  		<!-- <node name="traj_executor" pkg="execution" type="traj_executor_position_controller.py" args="$(arg cf_leader_name)" /> -->
+  		<node name="traj_executor" pkg="execution" type="leader_traj_executor_position_controller.py" output="screen" args="$(arg cf_leader_name)" />
 	</group>
 
 	<group ns="cf_follower">
-		<node name="cf_controller" 	pkg="execution" type="crazyflie_controller.py"  args="$(arg cf_2_name) 
+		<node name="cf_controller" 	pkg="execution" type="crazyflie_controller.py"  args="$(arg cf_follower_name) 
 			$(arg cf_2_x) $(arg cf_2_y) $(arg cf_2_z) " />
-  		<!-- <node name="traj_executor" pkg="execution" type="traj_executor_position_controller.py" output="screen" args="$(arg cf_2_name)" /> -->
-  		<node name="traj_executor" pkg="execution" type="follower_traj_executor_position_controller.py" output="screen" args="$(arg cf_2_name)" />
+  		<!-- <node name="traj_executor" pkg="execution" type="traj_executor_position_controller.py" output="screen" args="$(arg cf_follower_name)" /> -->
+  		<node name="traj_executor" pkg="execution" type="follower_traj_executor_position_controller.py" output="screen" args="$(arg cf_follower_name) $(arg cf_leader_name) " />
 	
 	</group>
 
