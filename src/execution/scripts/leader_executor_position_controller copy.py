@@ -191,6 +191,7 @@ class TrajectoryExecutor_Position_Controller:
         t = 0
         dt = 0.1
         beep()
+        start_traj_publisher.publish("Start")
         while not rospy.is_shutdown():
             t = t+dt
             if t > tr.duration:
@@ -258,6 +259,8 @@ if __name__ == "__main__":
     safety_land_publisher = rospy.Publisher(
         'safety_land', String, queue_size=10)
     pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
+    start_traj_publisher = rospy.Publisher(
+        'start_trajectory', String, queue_size=10)
 
     print("Waiting to connect to reference topic..")
     while pos_pub.get_num_connections() < 1:

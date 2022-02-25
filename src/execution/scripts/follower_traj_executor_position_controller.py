@@ -210,6 +210,11 @@ class TrajectoryExecutor_Position_Controller:
         self.land()
 
     def receive_leader_pose(self, msg):
+        if not self.leader_started_trajectory_flag:
+            # Leader has not started the trajectory yet
+            print("Leader has not started the trajectory yet")
+            return 0
+
         if self.traj_matcher == None:
             print("traj_matcher hasn't been initialized!")
             print("Safety landing...")
@@ -230,6 +235,9 @@ class TrajectoryExecutor_Position_Controller:
               x, "y:", y, "z:", z, "yaw:", yaw)
         offset = [-1, 4, 1]
         self.go_to_pose(x, y, z, yaw, offset=offset)
+
+    def leader_started_trajectory(self, msg):
+        self.leader_started_trajectory_flag = True
 
 
 def test_system():
@@ -338,6 +346,9 @@ if __name__ == "__main__":
 
     leader_sub = rospy.Subscriber(
         '/cf_leader/reference', PoseStamped, executor_pos.receive_leader_pose)
+
+    start_traj_sub = rospy.Publisher(
+        'start_trajectory', String, executor_pos.leader_started_trajectory)
 
     # test_system()  # Used to check the functionality of the system
 
