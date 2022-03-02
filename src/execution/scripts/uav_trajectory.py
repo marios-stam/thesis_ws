@@ -106,6 +106,7 @@ class Trajectory:
 
         print(data.shape)
         if len(data) == 33:
+            print("Reshaping data to (1,33)")
             data = data.reshape(1, 33)
 
         self.polynomials = [Polynomial4D(

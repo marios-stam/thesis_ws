@@ -198,6 +198,8 @@ install(PROGRAMS
   scripts/follower_traj_executor_velocity_controller.py
   scripts/droneMarkerVisMarios.py
   scripts/crazyflie_controller.py
+  scripts/crazyflie_controller_changed.py
+
   
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

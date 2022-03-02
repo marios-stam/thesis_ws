@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # license removed for brevity
+from distutils.log import error
 import sys
 import rospy
 from std_msgs.msg import String
@@ -123,15 +124,20 @@ def controller():
     integratorx = 0
     integratory = 0
     # CONTROLLER GAINS
-    k_px = 0.8  # 0.7  # 0.5 working
-    k_py = 0.8  # 0.7  # 0.5 working
+    k_px = 0.7  # 0.5 working
+    k_py = 0.7  # 0.5 working
+
     k_pz = 0.5  # 0.5 working
-    k_vx = 0.3  # 0.2 working
-    k_vy = 0.3  # 0.2 working
+
+    k_vx = 0.25  # 0.2 working
+    k_vy = 0.25  # 0.2 working
+
     k_vz = 0.5  # 0.5 working
     k_y = 1
     k_dy = 0.2
 
+    prev_error_x = 0
+    prev_error_y = 0
     while not rospy.is_shutdown():
 
         # Apply rotations around the z-axis (yaw angle)
@@ -147,13 +153,22 @@ def controller():
         # Implement your controller
         integrator = integrator + 0.001*(zref-zpos)
         ang_diff = numpy.mod(yawref - yaw + math.pi, 2*math.pi) - math.pi
-        integratorx = integratorx+0.003*(xref_body-xpos_body)
-        integratory = integratory+0.003*(yref_body-ypos_body)
+        integratorx = integratorx + 0.003 * (xref_body-xpos_body)
+        integratory = integratory + 0.003 * (yref_body-ypos_body)
 
-        u_p = k_vx*(k_px*(xref_body-xpos_body) - vx) + integratorx
-        u_r = k_vy*(k_py*(yref_body-ypos_body) - vy) + integratory
+        errorx = xref_body-xpos_body
+        errory = yref_body-ypos_body
+
+        d_errorx = errorx-prev_error_x
+        d_errory = errory-prev_error_y
+
+        u_p = k_vx*(k_px*errorx - 2.7 * vx) + integratorx
+        u_r = k_vy*(k_py*errory - 2.7 * vy) + integratory
         u_t = to_thrust + integrator + k_vz*(k_pz*(zref-zpos) - vz)
         u_y = k_y*ang_diff - k_dy*d_yaw
+
+        prev_error_x = errorx
+        prev_error_y = errory
 
         roll_pitch_threshold = 0.35  # 0.25
         if u_p > roll_pitch_threshold:

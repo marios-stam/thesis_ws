@@ -56,10 +56,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        cf1:
-          Value: true
-        cf2:
-          Value: true
         drone1:
           Value: true
         drone2:
@@ -79,10 +75,6 @@ Visualization Manager:
       Tree:
         ompl:
           world:
-            cf1:
-              {}
-            cf2:
-              {}
             rigid_body:
               drone1:
                 {}
@@ -311,4 +303,4 @@ Window Geometry:
     collapsed: true
   Width: 1848
   X: 72
-  Y: 27
+  Y: 421

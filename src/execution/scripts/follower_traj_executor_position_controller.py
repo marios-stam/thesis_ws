@@ -245,8 +245,10 @@ class TrajectoryExecutor_Position_Controller:
         x, y, z = pos[0], pos[1], pos[2]
         print("Follower:", "t:", t, "  ======> Going at :" "x:",
               x, "y:", y, "z:", z, "yaw:", yaw)
-        offset = [-1, 4, 1]
+
+        offset = [0, 0, 0]
         self.go_to_pose(x, y, z, yaw, offset=offset)
+        # TODO: maybe need to wait until get to pose
 
     def leader_started_trajectory(self, msg):
         print("Leader started the trajectory")
@@ -325,17 +327,28 @@ def test_trajectory_matcher():
 
 
 def test_traj_matcher_general():
-    traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
-    matrix = np.loadtxt(traj_file_name, delimiter=",",
+    # leader trajectory
+    # leader_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
+    leader_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
+
+    matrix = np.loadtxt(leader_traj_file_name, delimiter=",",
                         skiprows=1, usecols=range(33))
+
+    if matrix.shape[0] == 33:
+        matrix = matrix.reshape(1, 33)
 
     executor_pos.matrix = matrix
     executor_pos.traj_matcher = trajectory_matcher_time_based(matrix)
 
     tr = uav_trajectory.Trajectory()
-    follower_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
+    # follower_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
+    follower_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_follower.csv"
     tr.loadcsv(follower_traj_file_name, skip_first_row=True)
     executor_pos.tr = tr
+
+    pos = tr.eval(0.0).pos
+    print("Follower going to pose:", pos)
+    executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0)
 
 
 if __name__ == "__main__":

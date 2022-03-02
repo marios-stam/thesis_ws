@@ -7,6 +7,7 @@ from sympy import real_roots
 
 class trajectory_matcher_time_based:
     def __init__(self, matrix):
+        # matrix is the matrix of the trajectory of the leader
         self.durations = matrix[:, 0]
         self.xs = matrix[:, 1:9]
         self.ys = matrix[:, 9:17]

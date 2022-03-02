@@ -1,37 +1,46 @@
 <?xml version="1.0"?>
 <launch>
-	<arg name="cf_leader_name" value="demo_crazyflie5" />
+	<arg name="cf_leader_name" value="demo_crazyflie6" />
 	<!-- initial reference -->
 	<arg name="cf_1_x" value="0" /> 
-	<arg name="cf_1_y" value="4" />
+	<arg name="cf_1_y" value="3.5" />
 	<arg name="cf_1_z" value="1" />
+	
+	<param name="cf_leader_x" type="double" value="$(arg cf_1_x)" />
+	<param name="cf_leader_y" type="double" value="$(arg cf_1_y)" />
+	<param name="cf_leader_z" type="double" value="$(arg cf_1_z)" />
 
-	<arg name="cf_follower_name" value="demo_crazyflie6" />
+
+	<arg name="cf_follower_name" value="demo_crazyflie8" />
 	<!-- initial reference -->
   	<arg name="cf_2_x" value="-1" />
-	<arg name="cf_2_y" value=" 4" />
+	<arg name="cf_2_y" value=" 3.5" />
 	<arg name="cf_2_z" value=" 1" />
 
+	<param name="cf_follower_x" type="double" value="$(arg cf_2_x)" />
+	<param name="cf_follower_y" type="double" value="$(arg cf_2_y)" />
+	<param name="cf_follower_z" type="double" value="$(arg cf_2_z)" />
 
+	
 	<group ns="cf_leader">
-		<node name="cf_controller" 	pkg="execution" type="crazyflie_controller.py"  args="$(arg cf_leader_name) 
+		<node name="cf_controller" 	pkg="execution" type="crazyflie_controller_changed.py"   args="$(arg cf_leader_name) 
 			$(arg cf_1_x) $(arg cf_1_y) $(arg cf_1_z)" />
   		<!-- <node name="traj_executor" pkg="execution" type="traj_executor_position_controller.py" args="$(arg cf_leader_name)" /> -->
   		<node name="traj_executor" pkg="execution" type="leader_traj_executor_position_controller.py" output="screen" args="$(arg cf_leader_name)" />
 	</group>
 
 	<group ns="cf_follower">
-		<node name="cf_controller" 	pkg="execution" type="crazyflie_controller.py"  args="$(arg cf_follower_name) 
-			$(arg cf_2_x) $(arg cf_2_y) $(arg cf_2_z) " />
+		<node name="cf_controller" 	pkg="execution" type="crazyflie_controller_changed.py"   args="$(arg cf_follower_name)  
+		$(arg cf_2_x) $(arg cf_2_y) $(arg cf_2_z) " />
   		<!-- <node name="traj_executor" pkg="execution" type="traj_executor_position_controller.py" output="screen" args="$(arg cf_follower_name)" /> -->
   		<node name="traj_executor" pkg="execution" type="follower_traj_executor_position_controller.py" output="screen" args="$(arg cf_follower_name) $(arg cf_leader_name) " />
 	
 	</group>
 
-	<!-- <include file="$(find crazyswarm)/launch/crazyswarm_tools.launch"> -->
-    	<!-- all vars that included.launch requires must be set -->
-		<!-- <arg name="sim" value="true" /> -->
-	<!-- </include> -->
+	<!-- <include file="$(find crazyswarm)/launch/crazyswarm_tools.launch">
+    	all vars that included.launch requires must be set
+		<arg name="sim" value="true" />
+	</include> -->
     
 	<!-- <node name="traj_executor1" pkg="crazyflie_demo" type="traj_executor.py" output="screen" args="id 1" /> -->
 	<!-- <node name="traj_executor2" pkg="crazyflie_demo" type="traj_executor.py" output="screen" args="id 2" /> -->

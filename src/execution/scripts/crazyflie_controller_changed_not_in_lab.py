@@ -60,6 +60,7 @@ def callback(data):
     xpos = data.pose.pose.position.x
     ypos = data.pose.pose.position.y
     zpos = data.pose.pose.position.z
+
     qx = data.pose.pose.orientation.x
     qy = data.pose.pose.orientation.y
     qz = data.pose.pose.orientation.z
@@ -123,15 +124,25 @@ def controller():
     integratorx = 0
     integratory = 0
     # CONTROLLER GAINS
-    k_px = 0.8  # 0.7  # 0.5 working
-    k_py = 0.8  # 0.7  # 0.5 working
+    k_px = 0.7  # 0.5 working
+    k_py = 0.7  # 0.5 working
     k_pz = 0.5  # 0.5 working
+
+    ki_x = 0.005  # 0.005 working
+    ki_y = 0.005  # 0.005 working
+
+    k_dx = 0  # not tested yet
+    k_dy = 0  # not tested yet
+
     k_vx = 0.3  # 0.2 working
     k_vy = 0.3  # 0.2 working
     k_vz = 0.5  # 0.5 working
+
     k_y = 1
     k_dy = 0.2
 
+    prev_error_x = 0
+    prev_error_y = 0
     while not rospy.is_shutdown():
 
         # Apply rotations around the z-axis (yaw angle)
@@ -147,13 +158,25 @@ def controller():
         # Implement your controller
         integrator = integrator + 0.001*(zref-zpos)
         ang_diff = numpy.mod(yawref - yaw + math.pi, 2*math.pi) - math.pi
-        integratorx = integratorx+0.003*(xref_body-xpos_body)
-        integratory = integratory+0.003*(yref_body-ypos_body)
 
-        u_p = k_vx*(k_px*(xref_body-xpos_body) - vx) + integratorx
-        u_r = k_vy*(k_py*(yref_body-ypos_body) - vy) + integratory
+        integratorx = integratorx + ki_x * (xref_body-xpos_body)
+        integratory = integratory + ki_y * (yref_body-ypos_body)
+
+        error_x = xref_body-xpos_body
+        error_y = yref_body-ypos_body
+
+        u_p = k_vx*(k_px*error_x - vx) + integratorx + \
+            k_dx * (error_x - prev_error_x)
+
+        u_r = k_vy*(k_py*error_y - vy) + integratory + \
+            k_dx * (error_y - prev_error_y)
+
         u_t = to_thrust + integrator + k_vz*(k_pz*(zref-zpos) - vz)
         u_y = k_y*ang_diff - k_dy*d_yaw
+
+        # store errors for D control
+        prev_error_x = error_x
+        prev_error_y = error_y
 
         roll_pitch_threshold = 0.35  # 0.25
         if u_p > roll_pitch_threshold:
