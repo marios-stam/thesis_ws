@@ -127,10 +127,13 @@ def controller():
     k_px = 0.7  # 0.5 working
     k_py = 0.7  # 0.5 working
 
+    kd_x = 2.7  # 2.7 working
+    kd_y = 2.9  # 2.7 working
+
     k_pz = 0.5  # 0.5 working
 
-    k_vx = 0.25  # 0.2 working
-    k_vy = 0.25  # 0.2 working
+    k_vx = 0.3  # 0.25  # 0.2 working
+    k_vy = 0.3  # 0.25  # 0.2 working
 
     k_vz = 0.5  # 0.5 working
     k_y = 1
@@ -162,8 +165,8 @@ def controller():
         d_errorx = errorx-prev_error_x
         d_errory = errory-prev_error_y
 
-        u_p = k_vx*(k_px*errorx - 2.7 * vx) + integratorx
-        u_r = k_vy*(k_py*errory - 2.7 * vy) + integratory
+        u_p = k_vx*(k_px*errorx - kd_x * vx) + integratorx
+        u_r = k_vy*(k_py*errory - kd_y * vy) + integratory
         u_t = to_thrust + integrator + k_vz*(k_pz*(zref-zpos) - vz)
         u_y = k_y*ang_diff - k_dy*d_yaw
 

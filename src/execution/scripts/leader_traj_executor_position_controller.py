@@ -62,9 +62,9 @@ class TrajectoryExecutor_Position_Controller:
 
         error = np.inf
         t0 = rospy.get_time()
-        print("waiting untill get to pose...")
         while error > threshold:
             if rospy.get_time()-t0 > timeout_threshold:
+                print("Timeout occured")
                 break
 
             des = np.array(
@@ -145,6 +145,11 @@ class TrajectoryExecutor_Position_Controller:
         print("Landing...")
         # Land string is not necessary, but it is nice to have
         safety_land_publisher.publish("Land")
+
+    def stop_integrating(self):
+        print("Stopping integration...")
+
+        stop_integrating_publisher.publish("Stop")
 
     def execute_trajectory(self, matrix, relative=False):
         file_name = "piecewise_pole_test_{}.csv".format(executor_id)
@@ -227,30 +232,34 @@ class TrajectoryExecutor_Position_Controller:
             # the drone won't have to move before starting the trajector
             # offset = [self.odom.pose.pose.position.x,
             #           self.odom.pose.pose.position.y, self.odom.pose.pose.position.z]
-            offset = [0, 4, 1]
+
+            # offset = [0, 4, 1]
+            offset = cf_leader_initial_pos
         else:
             # If not relative the drone has to go first at the starting position
             offset = [0, 0, 0]
 
-            start_pose = self.get_traj_start_pose()
+        start_pose = self.get_traj_start_pose()
 
-            print("Leader going to start_pose:", start_pose.pose.position.x,
-                  start_pose.pose.position.y, start_pose.pose.position.z)
-            self.go_to_pose(start_pose.pose.position.x + offset[0],
-                            start_pose.pose.position.y + offset[1],
-                            start_pose.pose.position.z + offset[2], yaw=0)
-            self.wait_until_get_to_pose(start_pose.pose.position.x, start_pose.pose.position.y,
-                                        start_pose.pose.position.z, yaw=0, threshold=0.05, timeout_threshold=8)
-            print("Leader is at start_pose")
+        print("Leader going to start_pose:", start_pose.pose.position.x,
+              start_pose.pose.position.y, start_pose.pose.position.z)
+        self.go_to_pose(start_pose.pose.position.x + offset[0],
+                        start_pose.pose.position.y + offset[1],
+                        start_pose.pose.position.z + offset[2], yaw=0)
+        self.wait_until_get_to_pose(start_pose.pose.position.x, start_pose.pose.position.y,
+                                    start_pose.pose.position.z, yaw=0, threshold=0.05, timeout_threshold=4)
 
-        # rospy.sleep(0.5)
+        print("Leader is at start_pose")
+        beep()
+        self.stop_integrating()
+        rospy.sleep(1)
 
         # frequency of sending references to the controller in hz
         rate = rospy.Rate(100)  # maybe need to increase this
         t0 = rospy.get_time()
 
         t = 0
-        dt = 0.05
+        dt = 0.15
         beep()
         start_traj_publisher.publish("Start")  # send start signal to follower
         while not rospy.is_shutdown():
@@ -266,7 +275,7 @@ class TrajectoryExecutor_Position_Controller:
             self.go_to_pose(x, y, z, yaw, offset=offset)
             # wait until get to pose with a timeout
             self.wait_until_get_to_pose(
-                x+offset[0], y+offset[1], z+offset[2], yaw, threshold=0.15)
+                x+offset[0], y+offset[1], z+offset[2], yaw, threshold=0.15, timeout_threshold=2)
 
             rate.sleep()
 
@@ -313,9 +322,9 @@ def test_leader_follower():
     # load trajectory file
     # traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
 
-    traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
+    # traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
 
-    # traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
+    traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
 
     # matrix = np.loadtxt(traj_file_name, delimiter=",",skiprows=1, usecols=range(33)).reshape(1, 33)
     matrix = np.loadtxt(traj_file_name, delimiter=",",
@@ -328,7 +337,7 @@ def test_leader_follower():
 
     # executing trajectory
     executor_pos.execute_trajectory_testing_leader_follower(
-        matrix, relative=False)
+        matrix, relative=True)
 
     executor_pos.land()
 
@@ -343,9 +352,14 @@ if __name__ == "__main__":
 
     # get command line arguments
     cf_name = str(sys.argv[1])
-    common_prefix = "demo_crazyflie"
+
     # get id after prefix
-    executor_id = int(cf_name[len(common_prefix):])
+    try:
+        common_prefix = "demo_crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+    except:
+        common_prefix = "crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
 
     print("Executor postion controller with id:", executor_id)
 
@@ -356,6 +370,8 @@ if __name__ == "__main__":
 
     start_traj_publisher = rospy.Publisher(
         'start_trajectory', String, queue_size=10)
+    stop_integrating_publisher = rospy.Publisher(
+        'stop_integrator', String, queue_size=10)
 
     # waiting for the follower to be ready and connect to the leader
     # while start_traj_publisher.get_num_connections() < 1:
@@ -370,7 +386,7 @@ if __name__ == "__main__":
     print("Connected to reference topic")
 
     executor_pos = TrajectoryExecutor_Position_Controller()
-    odometry_sub = rospy.Subscriber('/pixy/vicon/demo_crazyflie{}/demo_crazyflie{}/odom'.format(executor_id, executor_id),
+    odometry_sub = rospy.Subscriber('/pixy/vicon/{}/{}/odom'.format(cf_name, cf_name),
                                     Odometry, executor_pos.odometry_callback)
 
     # Subscribe to trajectory topic and then execute it after going to the first waypoint
@@ -385,11 +401,11 @@ if __name__ == "__main__":
     print("Waiting for odometry to be ready..")
     executor_pos.wait_for_odometry()
 
-    # # wait to get to the initial position before executing any trajectory
+    # wait to get to the initial position before executing any trajectory
     print("Waiting to get to initial position before executing any trajectory")
     print("cf_leader_initial_pos:", cf_leader_initial_pos)
     executor_pos.wait_until_get_to_pose(cf_leader_initial_pos[0], cf_leader_initial_pos[1],
-                                        cf_leader_initial_pos[2], yaw=0, threshold=0.1)
+                                        cf_leader_initial_pos[2], yaw=0, threshold=0.1, timeout_threshold=4)
     print("Leader reached initial position")
 
     test_leader_follower()

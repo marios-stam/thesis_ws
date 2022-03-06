@@ -199,7 +199,10 @@ install(PROGRAMS
   scripts/droneMarkerVisMarios.py
   scripts/crazyflie_controller.py
   scripts/crazyflie_controller_changed.py
-
+  scripts/crazyflie_controller_changed_after_advise.py
+  
+  scripts/hummingbird3.py
+  scripts/open_gen.py
   
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

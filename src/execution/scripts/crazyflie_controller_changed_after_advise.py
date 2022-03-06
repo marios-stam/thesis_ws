@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # license removed for brevity
+from distutils.log import error
 import sys
 import rospy
 from std_msgs.msg import String
@@ -60,7 +61,6 @@ def callback(data):
     xpos = data.pose.pose.position.x
     ypos = data.pose.pose.position.y
     zpos = data.pose.pose.position.z
-
     qx = data.pose.pose.orientation.x
     qy = data.pose.pose.orientation.y
     qz = data.pose.pose.orientation.z
@@ -88,8 +88,18 @@ def callback_safety(data):
     land_flag = 1
 
 
+def callback_integrating_stop(data):
+    print("Callback integrating stop")
+    global integrator_stop_flag
+    integrator_stop_flag = 1
+
+
+def constrain(val, min_val, max_val):
+    return min(max_val, max(min_val, val))
+
+
 def controller():
-    global xref, yref, zref, integrator, land_flag, yawref
+    global xref, yref, zref, integrator, land_flag, yawref, integrator_stop_flag
 
     try:
         cf_name = str(sys.argv[1])
@@ -113,6 +123,8 @@ def controller():
 
     sub_safety = rospy.Subscriber('safety_land', String, callback_safety)
     sub_ref = rospy.Subscriber('reference', PoseStamped, callback_ref)
+    integrator_stop = rospy.SyncSubscriber(
+        'stop_integrator', String, callback_integrating_stop)
 
     rate = rospy.Rate(20)  # 20hz
     yawref = 0
@@ -126,18 +138,19 @@ def controller():
     # CONTROLLER GAINS
     k_px = 0.7  # 0.5 working
     k_py = 0.7  # 0.5 working
+
+    kd_x = 2.7  # 2.7 working
+    kd_y = 2.9  # 2.7 working
+
+    ki_x = 0.003  # 0.003 working
+    ki_y = 0.003  # 0.003 working
+
     k_pz = 0.5  # 0.5 working
 
-    ki_x = 0.005  # 0.005 working
-    ki_y = 0.005  # 0.005 working
+    k_vx = 0.3  # 0.25  # 0.2 working
+    k_vy = 0.3  # 0.25  # 0.2 working
 
-    k_dx = 0  # not tested yet
-    k_dy = 0  # not tested yet
-
-    k_vx = 0.3  # 0.2 working
-    k_vy = 0.3  # 0.2 working
     k_vz = 0.5  # 0.5 working
-
     k_y = 1
     k_dy = 0.2
 
@@ -155,47 +168,36 @@ def controller():
 
         print(cf_name, xref, yref, zref, yawref)
 
+        if integrator_stop_flag:
+            ki_x = 0
+            ki_y = 0
+
         # Implement your controller
         integrator = integrator + 0.001*(zref-zpos)
         ang_diff = numpy.mod(yawref - yaw + math.pi, 2*math.pi) - math.pi
 
+        # TODO:include conditional integrating (if error too large --> no integrate)
         integratorx = integratorx + ki_x * (xref_body-xpos_body)
         integratory = integratory + ki_y * (yref_body-ypos_body)
 
-        error_x = xref_body-xpos_body
-        error_y = yref_body-ypos_body
+        errorx = xref_body-xpos_body
+        errory = yref_body-ypos_body
 
-        u_p = k_vx*(k_px*error_x - vx) + integratorx + \
-            k_dx * (error_x - prev_error_x)
+        d_errorx = errorx-prev_error_x
+        d_errory = errory-prev_error_y
 
-        u_r = k_vy*(k_py*error_y - vy) + integratory + \
-            k_dx * (error_y - prev_error_y)
-
+        u_p = k_vx*(k_px*errorx - kd_x * vx) + integratorx
+        u_r = k_vy*(k_py*errory - kd_y * vy) + integratory
         u_t = to_thrust + integrator + k_vz*(k_pz*(zref-zpos) - vz)
         u_y = k_y*ang_diff - k_dy*d_yaw
 
-        # store errors for D control
-        prev_error_x = error_x
-        prev_error_y = error_y
+        prev_error_x = errorx
+        prev_error_y = errory
 
         roll_pitch_threshold = 0.35  # 0.25
-        if u_p > roll_pitch_threshold:
-            u_p = roll_pitch_threshold
-
-        if u_p < -roll_pitch_threshold:
-            u_p = -roll_pitch_threshold
-
-        if u_r > roll_pitch_threshold:
-            u_r = roll_pitch_threshold
-
-        if u_r < -roll_pitch_threshold:
-            u_r = -roll_pitch_threshold
-
-        if u_t > 1:
-            u_t = 1
-
-        if u_t < 0:
-            u_t = 0
+        u_p = constrain(u_p, -roll_pitch_threshold, roll_pitch_threshold)
+        u_r = constrain(u_r, -roll_pitch_threshold, roll_pitch_threshold)
+        u_t = constrain(u_t, 0, 1)
 
         if land_flag == 1:
             u_t = 0.55
