@@ -12,4 +12,4 @@ bags
 src/execution/scripts/hummingbird3.py
 src/execution/scripts/open_gen.py
 
-src/execution/scripts/MAV
+src/execution/scripts/MAV*
