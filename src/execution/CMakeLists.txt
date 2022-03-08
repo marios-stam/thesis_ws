@@ -200,6 +200,7 @@ install(PROGRAMS
   scripts/crazyflie_controller.py
   scripts/crazyflie_controller_changed.py
   scripts/crazyflie_controller_changed_after_advise.py
+  scripts/land_all.py
   
   scripts/hummingbird3.py
   scripts/open_gen.py

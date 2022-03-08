@@ -27,7 +27,7 @@
 
 	
 	<group ns="cf_leader">
-		<node name="cf_controller" pkg="execution" type="hummingbird3.py"   args="$(arg cf_leader_name) 
+		<node name="cf_controller" pkg="execution" type="hummingbird3.py"  output="screen"  args="$(arg cf_leader_name) 
 			$(arg cf_1_x) $(arg cf_1_y) $(arg cf_1_z)" />
   		<!-- <node name="traj_executor" pkg="execution" type="traj_executor_position_controller.py" args="$(arg cf_leader_name)" /> -->
   		<!-- <node name="traj_executor" pkg="execution" type="leader_traj_executor_position_controller.py" output="screen" args="$(arg cf_leader_name)" /> -->
