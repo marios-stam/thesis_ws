@@ -21,6 +21,11 @@ import sys
 
 from leader_follower import trajectory_matcher_time_based
 
+import rospkg
+# get an instance of RosPack with the default search paths
+rospack = rospkg.RosPack()
+exec_pkg_path = rospack.get_path('execution')
+
 
 def beep():
     wave_obj = simpleaudio.WaveObject.from_wave_file(
@@ -86,7 +91,8 @@ class TrajectoryExecutor_Position_Controller:
         matrix = TrajectoryExecutor_Position_Controller.build_matrix_from_traj_msg(
             piece_pol)
 
-        file_name = "piecewise_pole_test_{}.csv".format(executor_id)
+        file_name = exec_pkg_path+"/resources/piecewise_pols/" + \
+            "piecewise_pole_test_{}.csv".format(executor_id)
         np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
         tr = uav_trajectory.Trajectory()
 
@@ -166,7 +172,9 @@ class TrajectoryExecutor_Position_Controller:
         safety_land_publisher.publish("Land")
 
     def execute_trajectory(self, matrix, relative=False):
-        file_name = "piecewise_pole_test_{}.csv".format(executor_id)
+        file_name = exec_pkg_path+"/resources/piecewise_pols/" + \
+            "piecewise_pole_test_{}.csv".format(executor_id)
+
         np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
         tr = uav_trajectory.Trajectory()
 
@@ -358,19 +366,23 @@ if __name__ == "__main__":
     cf_name = str(sys.argv[1])
     leader_cf_name = str(sys.argv[2])
 
-    common_prefix = "demo_crazyflie"
     # get id after prefix
     try:
-        # if execeured via rosrun
-        executor_id = int(cf_name[len(common_prefix)+2:])
+        common_prefix = "demo_crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
     except Exception as e:
-        # if executed via roslaunch
+        common_prefix = "crazyflie"
         executor_id = int(cf_name[len(common_prefix):])
 
-    leader_id = int(cf_name[len(common_prefix):])
+    try:
+        common_prefix = "demo_crazyflie"
+        leader_id = int(leader_cf_name[len(common_prefix):])
+    except Exception as e:
+        common_prefix = "crazyflie"
+        leader_id = int(leader_cf_name[len(common_prefix):])
 
-    print("Executor postion controller with id:", executor_id)
-    print("Leader postion controller with id:", leader_id)
+    print("Executor follower position controller with id:", executor_id)
+    print("Leader position controller with id:", leader_id)
 
     safety_land_publisher = rospy.Publisher(
         'safety_land', String, queue_size=10)

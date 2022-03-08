@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from cgi import test
 from concurrent.futures import thread
 import rospy
 from rospy.client import INFO
@@ -19,6 +18,11 @@ import time
 import tf
 import uav_trajectory
 import sys
+
+import rospkg
+# get an instance of RosPack with the default search paths
+rospack = rospkg.RosPack()
+exec_pkg_path = rospack.get_path('execution')
 
 
 def beep():
@@ -152,12 +156,8 @@ class TrajectoryExecutor_Position_Controller:
         stop_integrating_publisher.publish("Stop")
 
     def execute_trajectory(self, matrix, relative=False):
-        file_name = "piecewise_pole_test_{}.csv".format(executor_id)
-        names = ["duration",
-                 "x^0", "x^1", "x^2", "x^3", "x^4", "x^5", "x^6", "x^7",
-                 "y^0", "y^1", "y^2", "y^3", "y^4", "y^5", "y^6", "y^7",
-                 "z^0", "z^1", "z^2", "z^3", "z^4", "z^5", "z^6", "z^7",
-                 "yaw^0", "yaw^1", "yaw^2", "yaw^3", "yaw^4", "yaw^5", "yaw^6", "yaw^7"]
+        file_name = exec_pkg_path+"/resources/piecewise_pols/" + \
+            "piecewise_pole_test_{}.csv".format(executor_id)
 
         np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
         tr = uav_trajectory.Trajectory()
@@ -217,7 +217,10 @@ class TrajectoryExecutor_Position_Controller:
         self.land()
 
     def execute_trajectory_testing_leader_follower(self, matrix, relative=False):
-        file_name = "piecewise_pole_test_{}.csv".format(executor_id)
+        exec_pkg_path = rospack.get_path('execution')
+
+        file_name = exec_pkg_path+"/resources/piecewise_pols/" + \
+            "piecewise_pole_test_{}.csv".format(executor_id)
 
         np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
         tr = uav_trajectory.Trajectory()
