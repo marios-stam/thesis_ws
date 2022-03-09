@@ -75,11 +75,12 @@ Visualization Manager:
       Tree:
         ompl:
           world:
+            drone1:
+              {}
+            drone2:
+              {}
             rigid_body:
-              drone1:
-                {}
-              drone2:
-                {}
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -143,13 +144,13 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /rb_robot
       Name: Rigid Body
       Namespaces:
-        collada_mesh: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -303,4 +304,4 @@ Window Geometry:
     collapsed: true
   Width: 1848
   X: 72
-  Y: 421
+  Y: 27
