@@ -5,6 +5,8 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /TF1
+        - /TF1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 708
   - Class: rviz/Selection
@@ -55,7 +57,7 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
         drone1:
           Value: true
         drone2:
@@ -63,7 +65,7 @@ Visualization Manager:
         ompl:
           Value: true
         rigid_body:
-          Value: true
+          Value: false
         world:
           Value: true
       Marker Alpha: 1
@@ -155,7 +157,7 @@ Visualization Manager:
       Buffer Length: 1
       Class: rviz/Path
       Color: 25; 255; 0
-      Enabled: true
+      Enabled: false
       Head Diameter: 0.019999999552965164
       Head Length: 0.07999999821186066
       Length: 0.30000001192092896
@@ -174,7 +176,7 @@ Visualization Manager:
       Shaft Length: 0.10000000149011612
       Topic: /rigiBodyPath
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /rb_environment

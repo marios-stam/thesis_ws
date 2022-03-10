@@ -285,40 +285,6 @@ class TrajectoryExecutor_Position_Controller:
         self.land()
 
 
-def test_system():
-    executor_pos.wait_for_odometry()
-    # executor_pos.take_off(height=0.5)  # takes off and waits until it is at the desired height
-    # rospy.sleep(2)
-    x, y, z = 0.5, 4.5, 1.5
-
-    executor_pos.go_to_pose(x, y, z, yaw=0)  # goes to the desired position
-    # waits until it is at the desired position
-    executor_pos.wait_until_get_to_pose(x, y, z, yaw=0, threshold=0.4)
-
-    rospy.sleep(2)
-
-    executor_pos.land()
-
-
-def test_system_trajectory():
-    executor_pos.wait_for_odometry()
-    traj = uav_trajectory.Trajectory()
-
-    # load trajectory file
-    # traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
-
-    traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/simple_line.csv"
-
-    matrix = np.loadtxt(traj_file_name, delimiter=",",
-                        skiprows=1, usecols=range(33)).reshape(1, 33)
-
-    print(matrix.shape)
-    # executing trajectory
-    executor_pos.execute_trajectory(matrix, relative=False)
-
-    executor_pos.land()
-
-
 def test_leader_follower():
     traj = uav_trajectory.Trajectory()
 

@@ -263,40 +263,6 @@ class TrajectoryExecutor_Position_Controller:
         self.leader_started_trajectory_flag = True
 
 
-def test_system():
-    executor_pos.wait_for_odometry()
-    # executor_pos.take_off(height=0.5)  # takes off and waits until it is at the desired height
-    # rospy.sleep(2)
-    x, y, z = 0.5, 4.5, 1.5
-
-    executor_pos.go_to_pose(x, y, z, yaw=0)  # goes to the desired position
-    # waits until it is at the desired position
-    executor_pos.wait_until_get_to_pose(x, y, z, yaw=0, threshold=0.4)
-
-    rospy.sleep(2)
-
-    executor_pos.land()
-
-
-def test_system_trajectory():
-    executor_pos.wait_for_odometry()
-    traj = uav_trajectory.Trajectory()
-
-    # load trajectory file
-    # traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
-
-    traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/simple_line.csv"
-
-    matrix = np.loadtxt(traj_file_name, delimiter=",",
-                        skiprows=1, usecols=range(33)).reshape(1, 33)
-
-    print(matrix.shape)
-    # executing trajectory
-    executor_pos.execute_trajectory(matrix, relative=False)
-
-    executor_pos.land()
-
-
 def test_trajectory_matcher():
     traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
     matrix = np.loadtxt(traj_file_name, delimiter=",",
@@ -339,22 +305,22 @@ def test_traj_matcher_general():
     # leader_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
     leader_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
 
-    matrix = np.loadtxt(leader_traj_file_name, delimiter=",",
-                        skiprows=1, usecols=range(33))
+    leader_matrix = np.loadtxt(leader_traj_file_name, delimiter=",",
+                               skiprows=1, usecols=range(33))
 
-    if matrix.shape[0] == 33:
-        matrix = matrix.reshape(1, 33)
+    if leader_matrix.shape[0] == 33:
+        leader_matrix = leader_matrix.reshape(1, 33)
 
-    executor_pos.matrix = matrix
-    executor_pos.traj_matcher = trajectory_matcher_time_based(matrix)
+    executor_pos.matrix = leader_matrix
+    executor_pos.traj_matcher = trajectory_matcher_time_based(leader_matrix)
 
-    tr = uav_trajectory.Trajectory()
+    follower_tr = uav_trajectory.Trajectory()
     # follower_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
     follower_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_follower.csv"
-    tr.loadcsv(follower_traj_file_name, skip_first_row=True)
-    executor_pos.tr = tr
+    follower_tr.loadcsv(follower_traj_file_name, skip_first_row=True)
+    executor_pos.tr = follower_tr
 
-    pos = tr.eval(0.0).pos
+    pos = follower_tr.eval(0.0).pos
     print("Follower going to pose:", pos)
     executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0)
 
