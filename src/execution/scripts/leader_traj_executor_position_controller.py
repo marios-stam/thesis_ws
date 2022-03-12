@@ -240,17 +240,19 @@ class TrajectoryExecutor_Position_Controller:
             offset = cf_leader_initial_pos
         else:
             # If not relative the drone has to go first at the starting position
-            offset = [0, 0, 0]
+            offset = [0, 0, -0.5]  # -0.5 because of ceiling danger
 
         start_pose = self.get_traj_start_pose()
 
         print("Leader going to start_pose:", start_pose.pose.position.x,
               start_pose.pose.position.y, start_pose.pose.position.z)
+        beep()
         self.go_to_pose(start_pose.pose.position.x + offset[0],
                         start_pose.pose.position.y + offset[1],
                         start_pose.pose.position.z + offset[2], yaw=0)
-        self.wait_until_get_to_pose(start_pose.pose.position.x, start_pose.pose.position.y,
-                                    start_pose.pose.position.z, yaw=0, threshold=0.05, timeout_threshold=4)
+        self.wait_until_get_to_pose(start_pose.pose.position.x + offset[0],
+                                    start_pose.pose.position.y + offset[1],
+                                    start_pose.pose.position.z + offset[2], yaw=0, threshold=0.05, timeout_threshold=6)
 
         print("Leader is at start_pose")
         beep()
@@ -258,12 +260,13 @@ class TrajectoryExecutor_Position_Controller:
         rospy.sleep(1)
 
         # frequency of sending references to the controller in hz
-        rate = rospy.Rate(100)  # maybe need to increase this
+        freq = 100
+        rate = rospy.Rate(freq)  # maybe need to increase this
         t0 = rospy.get_time()
 
         t = 0
-        dt = 0.15
-        beep()
+        dt = 1/freq   # 0.15
+        dt /= 6  # time sclaing factor
         start_traj_publisher.publish("Start")  # send start signal to follower
         while not rospy.is_shutdown():
             t = t+dt
@@ -277,8 +280,8 @@ class TrajectoryExecutor_Position_Controller:
             print("Leader", "t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
             self.go_to_pose(x, y, z, yaw, offset=offset)
             # wait until get to pose with a timeout
-            self.wait_until_get_to_pose(
-                x+offset[0], y+offset[1], z+offset[2], yaw, threshold=0.15, timeout_threshold=2)
+            # self.wait_until_get_to_pose(
+            # x+offset[0], y+offset[1], z+offset[2], yaw, threshold=1, timeout_threshold=1)
 
             rate.sleep()
 
@@ -294,6 +297,8 @@ def test_leader_follower():
     # traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
 
     traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
+    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1.csv"
+    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2.csv"
 
     # matrix = np.loadtxt(traj_file_name, delimiter=",",skiprows=1, usecols=range(33)).reshape(1, 33)
     matrix = np.loadtxt(traj_file_name, delimiter=",",
