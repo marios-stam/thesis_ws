@@ -192,6 +192,9 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
   scripts/droneMarkerVis.py
+  scripts/render_mesh.py
+  scripts/error_calc.py
+  
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

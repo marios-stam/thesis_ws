@@ -8,23 +8,21 @@ from visualization_msgs.msg import Marker, MarkerArray
 from math import pi
 import tf
 
-DRONES_NUMBER = 5
-
 
 class DroneMarker(Marker):
-    def __init__(self, id, pos=[0, 0, 0], rot=[0, 0, 0, 0]):
+    def __init__(self, identifier, pos=[0, 0, 0], rot=[0, 0, 0, 0]):
         super().__init__()
         self.header.frame_id = "world"
         self.header.stamp = rospy.get_rostime()
-        self.ns = "cf"
-        self.id = id
+        # self.ns = "cf"
+        self.identifier = identifier
         self.type = Marker.MESH_RESOURCE
         self.mesh_resource = "package://3Dvisualization/resources/Quadcopter.stl"
         self.action = 0
 
         self.updatePose(pos, rot)
 
-        scale_fac = 1/400
+        scale_fac = 1/600
         self.scale.x = scale_fac
         self.scale.y = scale_fac
         self.scale.z = scale_fac
@@ -57,10 +55,15 @@ class DroneMarkersArray(MarkerArray):
         super().__init__()
         self.markers = []
         self.id_index_dict = {}
+        self.mesh_counter = 0
 
     def update(self, id, trans, rot):
         if id not in self.id_index_dict.keys():
+            print(id, "not in ", self.id_index_dict.keys())
+            self.id_index_dict[id] = self.mesh_counter
             self.markers.append(DroneMarker(id, trans, rot))
+            self.mesh_counter += 1
+            print("dict", self.id_index_dict)
         else:
             index = self.id_index_dict[id]
             self.markers[index].updatePose(trans, rot)
@@ -76,16 +79,26 @@ if __name__ == "__main__":
     dronesMarkPub = rospy.Publisher(
         'dronesMarkers_array',  MarkerArray, queue_size=10)
 
+    # get command line arguments
+    leader_topic = rospy.get_param("/cf_leader_name")
+    follower_topic = rospy.get_param("/cf_follower_name")
+
+    leader_topic = "/{}/{}".format(leader_topic, leader_topic)
+    follower_topic = "/{}/{}".format(follower_topic, follower_topic)
+
+    drone_topics = [leader_topic, follower_topic]
+    print("leader_topic:", leader_topic)
+    print("follower_topic:", follower_topic)
+
     drones = DroneMarkersArray()
     while not rospy.is_shutdown():
 
-        for id in range(DRONES_NUMBER):
+        for tf_topic in drone_topics:
             try:
                 (trans, rot) = listener.lookupTransform(
-                    '/world', "/cf" + str(id), rospy.Time(0))
-                # print(f"     Found /cf{id} at position {trans}")
+                    '/world', tf_topic, rospy.Time(0))
 
-                drones.update(id, trans, rot)
+                drones.update(tf_topic, trans, rot)
 
             except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 pass

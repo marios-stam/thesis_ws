@@ -114,6 +114,7 @@ class TrajectoryExecutor_Position_Controller:
     def go_to_pose(self, x, y, z, yaw, offset=[0, 0, 0]):
         p = PoseStamped()
         p.header.stamp = rospy.Time.now()
+        p.header.frame_id = "world"
 
         x, y, z = x+offset[0], y+offset[1], z+offset[2]  # adding offset
         p.pose.position.x, p.pose.position.y, p.pose.position.z = x, y, z
