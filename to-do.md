@@ -11,3 +11,4 @@
 ## Planning
 - [ ] Accept symmetrical goal states (yaw=0/180 deg)
 - [ ] Design use cases that exhibit the improvemens on path planning (custom mesh V shape)    
+- [ ] Change easily the degrees of freedom of planning (yaw,drones distance,drones angle)
