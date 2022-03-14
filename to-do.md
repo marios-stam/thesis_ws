@@ -1,4 +1,4 @@
-### To do list
+# To do list
 ## Execution 
 - [x] Visualize obstacle and drone pose realtime while flying (test through rosbags)V
 - [x] Visualize drone recorded trajectory in 3D (through rosbags)
