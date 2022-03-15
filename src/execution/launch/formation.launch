@@ -52,7 +52,7 @@
 	<!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find execution)/launch/formation.rviz" output="log"/> -->
 	<!-- <node name="mesh_renderer" pkg="3Dvisualization" type="render_mesh.py"  args="$(arg env_mesh_path)" /> -->
 	<!-- <node name="drones_vis"    pkg="3Dvisualization" type="droneMarkerVis.py"  /> -->
-	<!-- <node name="error_calc"    pkg="3Dvisualization" type="error_calc.py"  /> -->
+	<node name="error_calc"    pkg="3Dvisualization" type="error_calc.py"  />
 
 	<!-- <node name="traj_executor1" pkg="crazyflie_demo" type="traj_executor.py" output="screen" args="id 1" /> -->
 	<!-- <node name="traj_executor2" pkg="crazyflie_demo" type="traj_executor.py" output="screen" args="id 2" /> -->

@@ -1,5 +1,7 @@
 # To do list
 
+**Bold** are prioritized tasks.
+
 ## Execution
 
 - [x] Visualize obstacle and drone pose realtime while flying (test through rosbags)V
@@ -11,9 +13,11 @@
 - [ ] Dynamically change the radius threshold for the next waypoint depending on the distance to the next waypoint
 - [ ] Remove outliers from the trajectory comparison visualization
 - [ ] Run the last generated bag file at visualizations
+- [ ] **Maintain the velocity that th controller works the best and use it for the next waypoint(while genrrating)**
 
 ## Planning
 
 - [ ] Accept symmetrical goal states (yaw=0/180 deg)
 - [ ] Design use cases that exhibit the improvemens on path planning (custom mesh V shape)
 - [ ] Change easily the degrees of freedom of planning (yaw,drones distance,drones angle)
+- [ ] **Execute trahectory for smooth take-off and going to first waypoint of trajectory**

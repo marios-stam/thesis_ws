@@ -138,13 +138,15 @@ class TrajectoryExecutor_Position_Controller:
 
     def take_off(self, height=1):
         if self.odom == None:
-            return False
+            rospy.logerr("No odometry received yet")
+            sys.exit()
+
         x, y, z = self.odom.pose.pose.position.x, self.odom.pose.pose.position.y, self.odom.pose.pose.position.z
 
         self.go_to_pose(x, y, height, 0)
 
         self.wait_until_get_to_pose(
-            x, y, height, 0, threshold=0.4, timeout_threshold=4)
+            x, y, height, 0, threshold=0.05, timeout_threshold=4)
 
     def land(self):
         print("Landing...")
@@ -243,6 +245,9 @@ class TrajectoryExecutor_Position_Controller:
             # If not relative the drone has to go first at the starting position
             offset = [0, 0, -0.5]  # -0.5 because of ceiling danger
 
+        print("Leader taking off...")
+        self.take_off(height=0.5)
+
         start_pose = self.get_traj_start_pose()
 
         print("Leader going to start_pose:", start_pose.pose.position.x,
@@ -267,7 +272,7 @@ class TrajectoryExecutor_Position_Controller:
 
         t = 0
         dt = 1/freq   # 0.15
-        dt /= 6  # time sclaing factor
+        dt /= 3  # time scaling factor
         start_traj_publisher.publish("Start")  # send start signal to follower
         while not rospy.is_shutdown():
             t = t+dt

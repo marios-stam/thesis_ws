@@ -96,7 +96,10 @@ def generate_traj_matrix(traj_topics, bag, offset, dtype=PoseStamped, t_offset=N
     if t_offset == None:
         t_offset = bag.get_start_time()
     else:
-        t_offset = t_offset.secs
+        try:
+            t_offset = t_offset.secs
+        except:
+            t_offset = t_offset
 
     for i in range(len(traj_topics)):
         j = 0
@@ -188,6 +191,11 @@ def get_real_topics(bag):
     return traj_topics
 
 
+def visualize_bag_ref_real(bag_file_path, ax):
+    visualize_bag_real_trajs(bag_file_path, ax, offset=[0, 0, 0], vis_after_start_traj=False)
+    visualize_bag_ref_trajs(bag_file_path, ax, offset=[0, 0, 0])
+
+
 if __name__ == "__main__":
 
     # bag files
@@ -197,6 +205,10 @@ if __name__ == "__main__":
     bag_file_path = "03-11/auto_gen_traj_single3.bag"
     bag_file_path1 = "03-15/simple_kamikazi.bag"
     bag_file_path2 = "03-15/simple_kamikazi2.bag"
+    bag_file_path3 = "03-15/simple_kamikazi3.bag"
+    bag_file_path4 = "03-15/simple_kamikazi4.bag"
+    bag_file_path5 = "03-15/simple_kamikazi5.bag"
+    bag_file_path6 = "03-15/simple_kamikazi6.bag"
 
     # trajectories files
     auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_simple.csv"
@@ -206,10 +218,8 @@ if __name__ == "__main__":
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    visualize_bag_real_trajs(bag_file_path1, ax, offset=[0, 0, 0], vis_after_start_traj=True)
-    visualize_bag_ref_trajs(bag_file_path1, ax, offset=[0, 0, 0])
-    visualize_bag_real_trajs(bag_file_path2, ax, offset=[0, 0, 0], vis_after_start_traj=True)
-    visualize_bag_ref_trajs(bag_file_path2, ax, offset=[0, 0, 0])
+    # visualize_bag_ref_real(bag_file_path4, ax)
+    visualize_bag_ref_real(bag_file_path6, ax)
 
     # visualise_traj_from_file(auto_generated_1, True, ax, offset=[0, 0, -0.5])
     # visualise_traj_from_file(auto_generated_2, True, ax, offset=[0, 0, -0.5])
