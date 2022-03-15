@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root version="2.3.8">
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab containers="1" tab_name="tab1">
+   <Container>
+    <DockSplitter count="3" orientation="-" sizes="0.332957;0.334086;0.332957">
+     <DockArea name="...">
+      <plot style="Lines" mode="TimeSeries">
+       <range right="60.182028" top="1.038677" left="0.000000" bottom="-1.058983"/>
+       <limitY/>
+       <curve name="/cf_leader/reference/position/x" color="#d62728"/>
+       <curve name="/tf//world/crazyflie8/crazyflie8/translation/x" color="#f14cc1"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" mode="TimeSeries">
+       <range right="60.182028" top="4.564685" left="0.000000" bottom="3.429350"/>
+       <limitY/>
+       <curve name="/cf_leader/reference/position/y" color="#1ac938"/>
+       <curve name="/tf//world/crazyflie8/crazyflie8/translation/y" color="#9467bd"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" mode="TimeSeries">
+       <range right="60.182028" top="0.718709" left="0.000000" bottom="0.070288"/>
+       <limitY/>
+       <curve name="/cf_leader/reference/position/z" color="#ff7f0e"/>
+       <curve name="/tf//world/crazyflie8/crazyflie8/translation/z" color="#17becf"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad CSV">
+   <default time_axis=""/>
+  </plugin>
+  <plugin ID="DataLoad ROS bags">
+   <use_header_stamp value="false"/>
+   <use_renaming_rules value="true"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+  </plugin>
+  <plugin ID="DataLoad ULog"/>
+  <plugin ID="LSL Subscriber"/>
+  <plugin ID="MQTT Subscriber"/>
+  <plugin ID="ROS Topic Subscriber">
+   <use_header_stamp value="true"/>
+   <use_renaming_rules value="true"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+  </plugin>
+  <plugin ID="UDP Server"/>
+  <plugin ID="WebSocket Server"/>
+  <plugin ID="ZMQ Subscriber"/>
+  <plugin status="idle" ID="ROS /rosout Visualization"/>
+  <plugin status="idle" ID="ROS Topic Re-Publisher"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <previouslyLoaded_Datafiles>
+  <fileInfo filename="/home/marios/thesis_ws/bags/03-11/auto_gen_traj_single_difficult_kamikazi11.bag" prefix="">
+   <selected_datasources value="/cf_leader/ref;/cf_leader/reference;/pixy/vicon/crazyflie8/crazyflie8/odom;/rosout;/tf"/>
+   <plugin ID="DataLoad ROS bags">
+    <use_header_stamp value="false"/>
+    <use_renaming_rules value="true"/>
+    <discard_large_arrays value="true"/>
+    <max_array_size value="100"/>
+   </plugin>
+  </fileInfo>
+ </previouslyLoaded_Datafiles>
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

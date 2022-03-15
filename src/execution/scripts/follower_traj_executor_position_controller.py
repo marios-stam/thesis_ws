@@ -301,10 +301,13 @@ def test_trajectory_matcher():
 
 
 def test_traj_matcher_general():
+
+    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1.csv"
+    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2.csv"
+
     # leader trajectory
     # leader_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
     leader_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
-
     leader_matrix = np.loadtxt(leader_traj_file_name, delimiter=",",
                                skiprows=1, usecols=range(33))
 
@@ -317,6 +320,7 @@ def test_traj_matcher_general():
     follower_tr = uav_trajectory.Trajectory()
     # follower_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
     follower_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_follower.csv"
+
     follower_tr.loadcsv(follower_traj_file_name, skip_first_row=True)
     executor_pos.tr = follower_tr
 

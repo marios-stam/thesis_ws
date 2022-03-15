@@ -9,14 +9,17 @@ from geometry_msgs.msg import PoseStamped, TransformStamped
 # import pandas as pd
 
 
-def visualize_bag_real_trajs(file_path, ax, offset=[0, 0, 0]):
+def visualize_bag_real_trajs(file_path, ax, offset=[0, 0, 0], vis_after_start_traj=False):
     bags_path = "/home/marios/thesis_ws/bags/"
     bag = rosbag.Bag(bags_path+file_path)
 
     traj_topics = get_real_topics(bag)
+    if vis_after_start_traj:
+        t_offset = get_start_traj_time(bag)
+    else:
+        t_offset = bag.get_start_time()
 
-    trajectories = generate_traj_matrix(
-        traj_topics, bag, offset, dtype=TransformStamped)
+    trajectories = generate_traj_matrix(traj_topics, bag, offset, dtype=TransformStamped, t_offset=t_offset)
 
     bag.close()
 
@@ -78,15 +81,32 @@ def visualise_traj_from_file(file_name, skip_first_row, ax, offset=[0, 0, 0]):
     print("z_min:", z_min, "z_max:", z_max)
 
 
-def generate_traj_matrix(traj_topics, bag, offset, dtype=PoseStamped):
+def get_start_traj_time(bag):
+    topic = '/cf_leader/start_trajectory'
+    for topic, msg, t in bag.read_messages(topics=[topic]):
+        return t
+
+
+def generate_traj_matrix(traj_topics, bag, offset, dtype=PoseStamped, t_offset=None):
     trajectories = []
     for top in traj_topics:
         msgs_count = bag.get_message_count(top)
         trajectories .append([[0, 0, 0]]*msgs_count)
 
+    if t_offset == None:
+        t_offset = bag.get_start_time()
+    else:
+        t_offset = t_offset.secs
+
     for i in range(len(traj_topics)):
         j = 0
         for topic, msg, t in bag.read_messages(topics=[traj_topics[i]]):
+
+            t_now = t.secs
+
+            if t_now < t_offset:
+                continue
+
             # id = traj_topics.index(topic)
             if dtype == PoseStamped:
                 pos = msg.pose.position
@@ -102,6 +122,16 @@ def generate_traj_matrix(traj_topics, bag, offset, dtype=PoseStamped):
             pos = [x, y, z]
             trajectories[i][j] = pos
             j += 1
+
+        # remove all zero lines after landing
+        trajectories = np.array(trajectories)
+        trajectories_without_landing = []
+        print("trajectories shape:", trajectories.shape)
+        for i, traj in enumerate(trajectories):
+            trajectories_without_landing.append(traj[~np.all(traj == 0, axis=1)])
+
+        trajectories = trajectories_without_landing
+
     return trajectories
 
 
@@ -163,16 +193,17 @@ if __name__ == "__main__":
     # bag files
     bag_file_path = "03-11/auto_gen_traj_single_difficult_akash_advice5.bag"
     bag_file_path = "03-03/2022-03-03-17-33-43.bag"
-    bag_file_path = "03-03/2022-03-03-17-36-33.bag"
+    bag_file_path = "03-11/auto_gen_traj_single_difficult_kamikazi7.bag"
 
     # trajectories files
     auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1.csv"
     auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2.csv"
+    fig8 = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    visualize_bag_real_trajs(bag_file_path, ax, offset=[0, 0, 0])
+    visualize_bag_real_trajs(bag_file_path, ax, offset=[0, 0, 0], vis_after_start_traj=True)
     visualize_bag_ref_trajs(bag_file_path, ax, offset=[0, 0, 0])
     # visualise_traj(auto_generated_1, True, ax, offset=[0, 0, -0.5])
     ax.set_xlabel('X')
