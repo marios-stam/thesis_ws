@@ -194,18 +194,26 @@ if __name__ == "__main__":
     bag_file_path = "03-11/auto_gen_traj_single_difficult_akash_advice5.bag"
     bag_file_path = "03-03/2022-03-03-17-33-43.bag"
     bag_file_path = "03-11/auto_gen_traj_single_difficult_kamikazi7.bag"
+    bag_file_path = "03-11/auto_gen_traj_single3.bag"
+    bag_file_path1 = "03-15/simple_kamikazi.bag"
+    bag_file_path2 = "03-15/simple_kamikazi2.bag"
 
     # trajectories files
-    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1.csv"
-    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2.csv"
+    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_simple.csv"
+    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_simple.csv"
     fig8 = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    visualize_bag_real_trajs(bag_file_path, ax, offset=[0, 0, 0], vis_after_start_traj=True)
-    visualize_bag_ref_trajs(bag_file_path, ax, offset=[0, 0, 0])
-    # visualise_traj(auto_generated_1, True, ax, offset=[0, 0, -0.5])
+    visualize_bag_real_trajs(bag_file_path1, ax, offset=[0, 0, 0], vis_after_start_traj=True)
+    visualize_bag_ref_trajs(bag_file_path1, ax, offset=[0, 0, 0])
+    visualize_bag_real_trajs(bag_file_path2, ax, offset=[0, 0, 0], vis_after_start_traj=True)
+    visualize_bag_ref_trajs(bag_file_path2, ax, offset=[0, 0, 0])
+
+    # visualise_traj_from_file(auto_generated_1, True, ax, offset=[0, 0, -0.5])
+    # visualise_traj_from_file(auto_generated_2, True, ax, offset=[0, 0, -0.5])
+
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')

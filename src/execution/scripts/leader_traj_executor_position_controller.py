@@ -247,7 +247,7 @@ class TrajectoryExecutor_Position_Controller:
 
         print("Leader going to start_pose:", start_pose.pose.position.x,
               start_pose.pose.position.y, start_pose.pose.position.z)
-        beep()
+
         self.go_to_pose(start_pose.pose.position.x + offset[0],
                         start_pose.pose.position.y + offset[1],
                         start_pose.pose.position.z + offset[2], yaw=0)
@@ -302,8 +302,8 @@ def test_leader_follower():
     auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2.csv"
 
     # matrix = np.loadtxt(traj_file_name, delimiter=",",skiprows=1, usecols=range(33)).reshape(1, 33)
-    matrix = np.loadtxt(traj_file_name, delimiter=",",
-                        skiprows=1, usecols=range(33))
+    # matrix = np.loadtxt(auto_generated_1, delimiter=",", skiprows=0, usecols=range(33))
+    matrix = np.loadtxt(auto_generated_2, delimiter=",", skiprows=0, usecols=range(33))
 
     print(matrix.shape)
     if matrix.shape[0] == 33:
@@ -312,7 +312,7 @@ def test_leader_follower():
 
     # executing trajectory
     executor_pos.execute_trajectory_testing_leader_follower(
-        matrix, relative=True)
+        matrix, relative=False)
 
     executor_pos.land()
 
