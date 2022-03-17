@@ -127,13 +127,13 @@ def generate_traj_matrix(traj_topics, bag, offset, dtype=PoseStamped, t_offset=N
             j += 1
 
         # remove all zero lines after landing
-        trajectories = np.array(trajectories)
-        trajectories_without_landing = []
-        print("trajectories shape:", trajectories.shape)
-        for i, traj in enumerate(trajectories):
-            trajectories_without_landing.append(traj[~np.all(traj == 0, axis=1)])
+        # trajectories = np.array(trajectories)
+        # trajectories_without_landing = []
+        # print("trajectories shape:", trajectories.shape)
+        # for i, traj in enumerate(trajectories):
+        #     trajectories_without_landing.append(traj[~np.all(traj == 0, axis=1)])
 
-        trajectories = trajectories_without_landing
+        # trajectories = trajectories_without_landing
 
     return trajectories
 
@@ -208,7 +208,8 @@ if __name__ == "__main__":
     bag_file_path3 = "03-15/simple_kamikazi3.bag"
     bag_file_path4 = "03-15/simple_kamikazi4.bag"
     bag_file_path5 = "03-15/simple_kamikazi5.bag"
-    bag_file_path6 = "03-15/simple_kamikazi6.bag"
+    bag_file_path = "03-16/cf10.bag"
+    bag_file_path = "03-16/both_traj_interesting.bag"
 
     # trajectories files
     auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_simple.csv"
@@ -219,7 +220,7 @@ if __name__ == "__main__":
     ax = fig.add_subplot(111, projection='3d')
 
     # visualize_bag_ref_real(bag_file_path4, ax)
-    visualize_bag_ref_real(bag_file_path6, ax)
+    visualize_bag_ref_real(bag_file_path, ax)
 
     # visualise_traj_from_file(auto_generated_1, True, ax, offset=[0, 0, -0.5])
     # visualise_traj_from_file(auto_generated_2, True, ax, offset=[0, 0, -0.5])

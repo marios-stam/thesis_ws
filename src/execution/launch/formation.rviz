@@ -8,7 +8,7 @@ Panels:
         - /Status1
         - /Grid1
         - /Odometry1/Shape1
-        - /Pose1
+        - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz/Selection
@@ -95,6 +95,12 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        crazyflie10/crazyflie10:
+          Value: true
+        crazyflie9/crazyflie9:
+          Value: true
+        world:
+          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -102,7 +108,11 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        world:
+          crazyflie10/crazyflie10:
+            {}
+          crazyflie9/crazyflie9:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -134,7 +144,7 @@ Visualization Manager:
       Marker Topic: /dronesMarkers_array
       Name: DroneMarkers
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -185,6 +195,14 @@ Visualization Manager:
       Topic: /path2
       Unreliable: false
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /catenaries_array
+      Name: Catenaries
+      Namespaces:
+        caten_0: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -213,7 +231,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 15.023319244384766
+      Distance: 8.31648063659668
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -229,9 +247,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9003980159759521
+      Pitch: 0.7353982925415039
       Target Frame: <Fixed Frame>
-      Yaw: 1.9354102611541748
+      Yaw: 5.350450038909912
     Saved: ~
 Window Geometry:
   Displays:
@@ -250,4 +268,4 @@ Window Geometry:
     collapsed: false
   Width: 1848
   X: 72
-  Y: 421
+  Y: 27

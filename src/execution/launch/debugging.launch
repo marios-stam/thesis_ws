@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-	<arg name="cf_leader_name" value="crazyflie8" />
+	<arg name="cf_leader_name" value="crazyflie9" />
 	<!-- initial reference -->
 	<arg name="cf_1_x" value="0" /> 
 	<arg name="cf_1_y" value="4" />
@@ -11,7 +11,7 @@
 	<param name="cf_leader_z" type="double" value="$(arg cf_1_z)" />
 
 
-	<arg name="cf_follower_name" value="demo_crazyflie3" />
+	<arg name="cf_follower_name" value="crazyflie10" />
 	<!-- initial reference -->
   	<arg name="cf_2_x" value="-1" />
 	<arg name="cf_2_y" value=" 4" />

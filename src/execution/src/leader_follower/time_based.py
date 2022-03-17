@@ -84,7 +84,7 @@ class trajectory_matcher_time_based:
 
         self.prev_index = i-1
         t = sum(self.durations[: self.prev_index])+t
-        print("t:", t)
+        # print("t:", t)
 
         return t
 

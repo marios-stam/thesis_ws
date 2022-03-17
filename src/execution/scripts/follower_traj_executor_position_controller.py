@@ -212,7 +212,7 @@ class TrajectoryExecutor_Position_Controller:
 
         t = 0
         dt = 0.1
-        beep()
+        # beep()
         while not rospy.is_shutdown():
             t = t+dt
             if t > tr.duration:
@@ -251,10 +251,9 @@ class TrajectoryExecutor_Position_Controller:
         evaluation = self.tr.eval(t)
         pos, yaw = evaluation.pos, evaluation.yaw
         x, y, z = pos[0], pos[1], pos[2]
-        print("Follower:", "t:", t, "  ======> Going at :" "x:",
-              x, "y:", y, "z:", z, "yaw:", yaw)
+        # print("Follower:", "t:", t, "  ======> Going at :" "x:", x, "y:", y, "z:", z, "yaw:", yaw)
 
-        offset = [0, 0, 0]
+        offset = [0, 0, -0.5]
         self.go_to_pose(x, y, z, yaw, offset=offset)
         # TODO: maybe need to wait until get to pose
 
@@ -307,9 +306,11 @@ def test_traj_matcher_general():
 
     # leader trajectory
     # leader_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
-    leader_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
+    # leader_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
+    leader_traj_file_name = auto_generated_2
+
     leader_matrix = np.loadtxt(leader_traj_file_name, delimiter=",",
-                               skiprows=1, usecols=range(33))
+                               skiprows=0, usecols=range(33))
 
     if leader_matrix.shape[0] == 33:
         leader_matrix = leader_matrix.reshape(1, 33)
@@ -319,14 +320,17 @@ def test_traj_matcher_general():
 
     follower_tr = uav_trajectory.Trajectory()
     # follower_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
-    follower_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_follower.csv"
+    # follower_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_follower.csv"
+    follower_traj_file_name = auto_generated_1
 
-    follower_tr.loadcsv(follower_traj_file_name, skip_first_row=True)
+    follower_tr.loadcsv(follower_traj_file_name, skip_first_row=False)
     executor_pos.tr = follower_tr
 
     pos = follower_tr.eval(0.0).pos
+    rospy.sleep(6)  # wait for take off
     print("Follower going to pose:", pos)
-    executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0)
+    beep()
+    executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, -0.5])
 
 
 if __name__ == "__main__":
