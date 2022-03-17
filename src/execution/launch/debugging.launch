@@ -46,7 +46,7 @@
 	
 	<!-- Visualizations  -->
 	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/stl/env-scene-ltu-experiment.stl" /> -->
-	<arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment.dae" />
+	<arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-hole-inclined-easy.dae" />
 	
 
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find execution)/launch/formation.rviz" output="log"/>

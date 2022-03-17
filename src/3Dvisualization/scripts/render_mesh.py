@@ -29,8 +29,8 @@ class MeshMarker(Marker):
         self.scale.y = scale_fac
         self.scale.z = scale_fac
 
-        self.color.r = 0.0
-        self.color.g = 1.0
+        self.color.r = 1.0
+        self.color.g = 0.0
         self.color.b = 0.0
         self.color.a = 1.0
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     meshes = DroneMarkersArray()
 
     for i, path in enumerate(args):
-        meshes.update(i, path, offset=[0, 0, -0.5])
+        meshes.update(i, path, offset=[0, 0, 0])
 
     print(meshes.markers)
     while not rospy.is_shutdown():

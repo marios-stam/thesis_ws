@@ -253,7 +253,7 @@ class TrajectoryExecutor_Position_Controller:
         x, y, z = pos[0], pos[1], pos[2]
         # print("Follower:", "t:", t, "  ======> Going at :" "x:", x, "y:", y, "z:", z, "yaw:", yaw)
 
-        offset = [0, 0, -0.5]
+        offset = [0, 0, 0]
         self.go_to_pose(x, y, z, yaw, offset=offset)
         # TODO: maybe need to wait until get to pose
 
@@ -304,6 +304,15 @@ def test_traj_matcher_general():
     auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1.csv"
     auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2.csv"
 
+    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_90_deg.csv"
+    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_90_deg.csv"
+
+    # auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_inclined_simple.csv"
+    # auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_inclined_simple.csv"
+
+    # auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_corridor_low.csv"
+    # auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_corridor_low.csv"
+
     # leader trajectory
     # leader_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
     # leader_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
@@ -330,7 +339,8 @@ def test_traj_matcher_general():
     rospy.sleep(6)  # wait for take off
     print("Follower going to pose:", pos)
     beep()
-    executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, -0.5])
+    # executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, -0.5])
+    executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, 0])
 
 
 if __name__ == "__main__":

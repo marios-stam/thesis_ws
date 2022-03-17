@@ -17,6 +17,7 @@
 - [ ] **Make private repo for NMPC controller**
 - [ ] When leader lands land follower too
 - [ ] Define follower and leader path file at the formation.launch file
+- [ ] Visualise path at debugging.launch
 
 ## Planning
 
@@ -24,3 +25,5 @@
 - [ ] Design use cases that exhibit the improvements on path planning (custom mesh V shape)
 - [ ] Change easily the degrees of freedom of planning (yaw,drones distance,drones angle)
 - [ ] **Execute trahectory for smooth take-off and going to first waypoint of trajectory**
+- [ ] Make a launch file and change all parameters from there (faster development)
+- [ ] Take into account the floor while planning (minimum distance from the floor)

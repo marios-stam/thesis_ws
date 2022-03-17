@@ -191,8 +191,8 @@ def get_real_topics(bag):
     return traj_topics
 
 
-def visualize_bag_ref_real(bag_file_path, ax):
-    visualize_bag_real_trajs(bag_file_path, ax, offset=[0, 0, 0], vis_after_start_traj=False)
+def visualize_bag_ref_real(bag_file_path, ax, vis_after_start_traj=False):
+    visualize_bag_real_trajs(bag_file_path, ax, offset=[0, 0, 0], vis_after_start_traj=vis_after_start_traj)
     visualize_bag_ref_trajs(bag_file_path, ax, offset=[0, 0, 0])
 
 
@@ -211,16 +211,21 @@ if __name__ == "__main__":
     bag_file_path = "03-16/cf10.bag"
     bag_file_path = "03-16/both_traj_interesting.bag"
 
+    bag_file_path = "03-17/angle_90_deg.bag"
+    bag_file_path = "03-17/inclined_simple.bag"
+    bag_file_path = "03-17/corridor_low.bag"
+    # bag_file_path = "03-17/angle_90_deg.bag"
+
     # trajectories files
-    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_simple.csv"
-    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_simple.csv"
+    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_corridor_low.csv"
+    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_corridor_low.csv"
     fig8 = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
     # visualize_bag_ref_real(bag_file_path4, ax)
-    visualize_bag_ref_real(bag_file_path, ax)
+    visualize_bag_ref_real(bag_file_path, ax, vis_after_start_traj=True)
 
     # visualise_traj_from_file(auto_generated_1, True, ax, offset=[0, 0, -0.5])
     # visualise_traj_from_file(auto_generated_2, True, ax, offset=[0, 0, -0.5])

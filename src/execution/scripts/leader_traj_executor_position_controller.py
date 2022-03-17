@@ -243,7 +243,8 @@ class TrajectoryExecutor_Position_Controller:
             offset = cf_leader_initial_pos
         else:
             # If not relative the drone has to go first at the starting position
-            offset = [0, 0, -0.5]  # -0.5 because of ceiling danger
+            # offset = [0, 0, -0.5]  # -0.5 because of ceiling danger
+            offset = [0, 0, 0]
 
         print("Leader taking off...")
         self.take_off(height=0.5)
@@ -305,6 +306,15 @@ def test_leader_follower():
     traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
     auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1.csv"
     auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2.csv"
+
+    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_90_deg.csv"
+    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_90_deg.csv"
+
+    # auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_inclined_simple.csv"
+    # auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_inclined_simple.csv"
+
+    # auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_corridor_low.csv"
+    # auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_corridor_low.csv"
 
     # matrix = np.loadtxt(traj_file_name, delimiter=",",skiprows=1, usecols=range(33)).reshape(1, 33)
     # matrix = np.loadtxt(auto_generated_1, delimiter=",", skiprows=0, usecols=range(33))
