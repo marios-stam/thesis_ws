@@ -46,12 +46,13 @@
 	
 	<!-- Visualizations  -->
 	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/stl/env-scene-ltu-experiment.stl" /> -->
-	<arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-hole-inclined-easy.dae" />
+	<arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-hole-inclined.dae" />
+	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-corridor-narrow.dae" />	 -->
 	
-
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find execution)/launch/formation.rviz" output="log"/>
 	<node name="mesh_renderer" pkg="3Dvisualization" type="render_mesh.py"  args="$(arg env_mesh_path)" />
 	<node name="drones_vis"    pkg="3Dvisualization" type="droneMarkerVis.py"  />
+	<node name="catenaries_listener"    pkg="catenaries" type="catenaries_listener.py"  args="1"  />  	<!-- TODO:add rope length as param -->
 	<!-- <node name="error_calc"    pkg="3Dvisualization" type="error_calc.py"  /> -->
 
 	<!-- <node name="traj_executor1" pkg="crazyflie_demo" type="traj_executor.py" output="screen" args="id 1" /> -->

@@ -148,10 +148,43 @@ class TrajectoryExecutor_Position_Controller:
         self.wait_until_get_to_pose(
             x, y, height, 0, threshold=0.05, timeout_threshold=4)
 
+    def take_off_traj(self, file_name=None):  # TODO:test this in experiment
+        print("Taking off using trajectory...")
+        # Loading file
+        if file_name is None:
+            file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/takeoff.csv"
+        tr = uav_trajectory.Trajectory().loadcsv(file_name, skip_first_row=False)
+        print("duration:", tr.duration)
+
+        # Setting ofsset because x,y are 0,0 in the trajectory file
+        offset = [self.odom.pose.pose.position.x, self.odom.pose.pose.position.y, 0]
+
+        freq = 100  # hz
+        rate = rospy.Rate(freq)
+        t = 0
+        dt = 1/freq
+        while not rospy.is_shutdown() and t < tr.duration:
+            t = t+dt
+
+            evaluation = tr.eval(t)
+            pos, yaw = evaluation.pos, evaluation.yaw
+            x, y, z = pos[0], pos[1], pos[2]
+
+            print("Leader", "t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
+            self.go_to_pose(x, y, z, yaw, offset=offset)
+            rate.sleep()
+
+        self.wait_until_get_to_pose(x, y, z, yaw, threshold=0.05, timeout_threshold=3)
+
     def land(self):
         print("Landing...")
         # Land string is not necessary, but it is nice to have
         safety_land_publisher.publish("Land")
+
+    def follower_land(self):
+        print("Follower landing...")
+        # Land string is not necessary, but it is nice to have
+        follower_safety_land_publisher.publish("Land")
 
     def stop_integrating(self):
         print("Stopping integration...")
@@ -248,6 +281,7 @@ class TrajectoryExecutor_Position_Controller:
 
         print("Leader taking off...")
         self.take_off(height=0.5)
+        # self.take_off_traj()
 
         start_pose = self.get_traj_start_pose()
 
@@ -299,26 +333,8 @@ def test_leader_follower():
     traj = uav_trajectory.Trajectory()
 
     # load trajectory file
-    # traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
-
-    # traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
-
-    traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
-    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1.csv"
-    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2.csv"
-
-    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_90_deg.csv"
-    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_90_deg.csv"
-
-    # auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_inclined_simple.csv"
-    # auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_inclined_simple.csv"
-
-    # auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_corridor_low.csv"
-    # auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_corridor_low.csv"
-
-    # matrix = np.loadtxt(traj_file_name, delimiter=",",skiprows=1, usecols=range(33)).reshape(1, 33)
-    # matrix = np.loadtxt(auto_generated_1, delimiter=",", skiprows=0, usecols=range(33))
-    matrix = np.loadtxt(auto_generated_2, delimiter=",", skiprows=0, usecols=range(33))
+    leader_traj_file = rospy.get_param("/cf_leader_traj")
+    matrix = np.loadtxt(leader_traj_file, delimiter=",", skiprows=0, usecols=range(33))
 
     print(matrix.shape)
     if matrix.shape[0] == 33:
@@ -326,10 +342,21 @@ def test_leader_follower():
         matrix = matrix.reshape(1, 33)
 
     # executing trajectory
-    executor_pos.execute_trajectory_testing_leader_follower(
-        matrix, relative=False)
+    executor_pos.execute_trajectory_testing_leader_follower(matrix, relative=False)
 
     executor_pos.land()
+
+
+def get_executor_id(cf_name):
+    # get id after prefix
+    try:
+        common_prefix = "demo_crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+    except:
+        common_prefix = "crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+
+    return executor_id
 
 
 if __name__ == "__main__":
@@ -342,19 +369,13 @@ if __name__ == "__main__":
 
     # get command line arguments
     cf_name = str(sys.argv[1])
-
-    # get id after prefix
-    try:
-        common_prefix = "demo_crazyflie"
-        executor_id = int(cf_name[len(common_prefix):])
-    except:
-        common_prefix = "crazyflie"
-        executor_id = int(cf_name[len(common_prefix):])
+    executor_id = get_executor_id(cf_name)
 
     print("Executor postion controller with id:", executor_id)
 
-    safety_land_publisher = rospy.Publisher(
-        'safety_land', String, queue_size=10)
+    safety_land_publisher = rospy.Publisher('safety_land', String, queue_size=10)
+    follower_safety_land_publisher = rospy.Publisher('/cf_follower/safety_land', String, queue_size=10)
+
     pos_pub = rospy.Publisher('reference',
                               PoseStamped, queue_size=10)
 

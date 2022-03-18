@@ -8,6 +8,9 @@ Panels:
         - /Status1
         - /Grid1
         - /Odometry1/Shape1
+        - /TF1
+        - /TF1/Frames1
+        - /TF1/Tree1
         - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 719
@@ -94,11 +97,11 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
         crazyflie10/crazyflie10:
-          Value: true
+          Value: false
         crazyflie9/crazyflie9:
-          Value: true
+          Value: false
         world:
           Value: true
       Marker Alpha: 1
@@ -268,4 +271,4 @@ Window Geometry:
     collapsed: false
   Width: 1848
   X: 72
-  Y: 27
+  Y: 421

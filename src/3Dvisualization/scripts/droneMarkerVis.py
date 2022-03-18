@@ -16,13 +16,14 @@ class DroneMarker(Marker):
         self.header.stamp = rospy.get_rostime()
         # self.ns = "cf"
         self.identifier = identifier
+        self.id = identifier
         self.type = Marker.MESH_RESOURCE
         self.mesh_resource = "package://3Dvisualization/resources/Quadcopter.stl"
         self.action = 0
 
         self.updatePose(pos, rot)
 
-        scale_fac = 1/600
+        scale_fac = 1/800
         self.scale.x = scale_fac
         self.scale.y = scale_fac
         self.scale.z = scale_fac
@@ -67,6 +68,18 @@ class DroneMarkersArray(MarkerArray):
         else:
             index = self.id_index_dict[id]
             self.markers[index].updatePose(trans, rot)
+            print(self.markers[index].id)
+
+
+def get_id_from_name(cf_name):
+    try:
+        common_prefix = "demo_crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+    except:
+        common_prefix = "crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+
+    return executor_id
 
 
 if __name__ == "__main__":
@@ -83,22 +96,25 @@ if __name__ == "__main__":
     leader_topic = rospy.get_param("/cf_leader_name")
     follower_topic = rospy.get_param("/cf_follower_name")
 
+    drone_ids = [get_id_from_name(leader_topic), get_id_from_name(follower_topic)]
+
     leader_topic = "/{}/{}".format(leader_topic, leader_topic)
     follower_topic = "/{}/{}".format(follower_topic, follower_topic)
 
     drone_topics = [leader_topic, follower_topic]
+
     print("leader_topic:", leader_topic)
     print("follower_topic:", follower_topic)
 
     drones = DroneMarkersArray()
     while not rospy.is_shutdown():
 
-        for tf_topic in drone_topics:
+        for i, tf_topic in enumerate(drone_topics):
             try:
                 (trans, rot) = listener.lookupTransform(
                     '/world', tf_topic, rospy.Time(0))
 
-                drones.update(tf_topic, trans, rot)
+                drones.update(drone_ids[i], trans, rot)
 
             except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 pass

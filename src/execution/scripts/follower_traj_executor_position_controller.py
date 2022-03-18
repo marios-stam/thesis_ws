@@ -300,46 +300,29 @@ def test_trajectory_matcher():
 
 
 def test_traj_matcher_general():
+    leader_traj_file = rospy.get_param("/cf_leader_traj")
+    follower_traj_file = rospy.get_param("/cf_follower_traj")
+    print("leader_traj_file:", leader_traj_file)
+    print("follower_traj_file:", follower_traj_file)
 
-    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1.csv"
-    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2.csv"
-
-    auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_90_deg.csv"
-    auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_90_deg.csv"
-
-    # auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_inclined_simple.csv"
-    # auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_inclined_simple.csv"
-
-    # auto_generated_1 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_1_corridor_low.csv"
-    # auto_generated_2 = "/home/marios/thesis_ws/src/drone_path_planning/resources/trajectories/Pol_matrix_2_corridor_low.csv"
-
-    # leader trajectory
-    # leader_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
-    # leader_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_leader.csv"
-    leader_traj_file_name = auto_generated_2
-
-    leader_matrix = np.loadtxt(leader_traj_file_name, delimiter=",",
-                               skiprows=0, usecols=range(33))
+    # Load leader trajectory
+    leader_matrix = np.loadtxt(leader_traj_file, delimiter=",", skiprows=0, usecols=range(33))
 
     if leader_matrix.shape[0] == 33:
         leader_matrix = leader_matrix.reshape(1, 33)
-
     executor_pos.matrix = leader_matrix
     executor_pos.traj_matcher = trajectory_matcher_time_based(leader_matrix)
 
+    # Load follower trajectory
     follower_tr = uav_trajectory.Trajectory()
-    # follower_traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
-    # follower_traj_file_name = "/home/marios/thesis_ws/src/execution/resources/trajectories/simple_line_follower.csv"
-    follower_traj_file_name = auto_generated_1
-
-    follower_tr.loadcsv(follower_traj_file_name, skip_first_row=False)
+    follower_tr.loadcsv(follower_traj_file, skip_first_row=False)
     executor_pos.tr = follower_tr
 
+    # Go to start position
     pos = follower_tr.eval(0.0).pos
     rospy.sleep(6)  # wait for take off
     print("Follower going to pose:", pos)
     beep()
-    # executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, -0.5])
     executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, 0])
 
 

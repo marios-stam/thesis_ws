@@ -24,7 +24,7 @@ class DroneMarker(Marker):
 
         self.updatePose(pos, rot)
 
-        scale_fac = 1/400
+        scale_fac = 1/500
         self.scale.x = scale_fac
         self.scale.y = scale_fac
         self.scale.z = scale_fac
