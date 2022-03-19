@@ -26,5 +26,5 @@
 - [ ] Change easily the degrees of freedom of planning (yaw,drones distance,drones angle)
 - [x] **Execute trajectory for smooth take-off**
 - [ ] Execute trajectory going to first waypoint of trajectory
-- [ ] Make a launch file and change all parameters from there (faster development)
+- [x] Make a launch file and change all parameters from there (faster development)
 - [ ] Take into account the floor while planning (minimum distance from the floor)
