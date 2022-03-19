@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-from concurrent.futures import thread
 import rospy
 from rospy.client import INFO
 import numpy as np
 from geometry_msgs.msg import PoseStamped
 import simpleaudio
-
+from nav_msgs.msg import Path
+from common_functions import publish_traj_as_path
 try:
     from execution.msg import TrajectoryPolynomialPieceMarios
 except:
@@ -138,7 +138,7 @@ class TrajectoryExecutor_Position_Controller:
 
     def take_off(self, height=1):
         if self.odom == None:
-            rospy.logerr("No odometry received yet")
+            rospy.logerr("No leader odometry received yet")
             sys.exit()
 
         x, y, z = self.odom.pose.pose.position.x, self.odom.pose.pose.position.y, self.odom.pose.pose.position.z
@@ -279,9 +279,13 @@ class TrajectoryExecutor_Position_Controller:
             # offset = [0, 0, -0.5]  # -0.5 because of ceiling danger
             offset = [0, 0, 0]
 
+        # publish executed trajectory for visualization
+
         print("Leader taking off...")
         self.take_off(height=0.5)
         # self.take_off_traj()
+
+        publish_traj_as_path(tr, offset, path_pub)
 
         start_pose = self.get_traj_start_pose()
 
@@ -329,6 +333,18 @@ class TrajectoryExecutor_Position_Controller:
         self.land()
 
 
+def get_executor_id(cf_name):
+    # get id after prefix
+    try:
+        common_prefix = "demo_crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+    except:
+        common_prefix = "crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+
+    return executor_id
+
+
 def test_leader_follower():
     traj = uav_trajectory.Trajectory()
 
@@ -345,18 +361,6 @@ def test_leader_follower():
     executor_pos.execute_trajectory_testing_leader_follower(matrix, relative=False)
 
     executor_pos.land()
-
-
-def get_executor_id(cf_name):
-    # get id after prefix
-    try:
-        common_prefix = "demo_crazyflie"
-        executor_id = int(cf_name[len(common_prefix):])
-    except:
-        common_prefix = "crazyflie"
-        executor_id = int(cf_name[len(common_prefix):])
-
-    return executor_id
 
 
 if __name__ == "__main__":
@@ -404,19 +408,18 @@ if __name__ == "__main__":
     rospy.Subscriber(
         'piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
 
-    # test_system()  # Used to check the functionality of the system
-
-    # test_system_trajectory()
+    # Publish path of the leader for visualization
+    path_pub = rospy.Publisher('/cf_leader/path', Path, queue_size=10)
 
     # Wait for odometry
-    print("Waiting for odometry to be ready..")
-    executor_pos.wait_for_odometry()
+    # print("Waiting for odometry to be ready..")
+    # executor_pos.wait_for_odometry()
 
     # wait to get to the initial position before executing any trajectory
     print("Waiting to get to initial position before executing any trajectory")
     print("cf_leader_initial_pos:", cf_leader_initial_pos)
-    executor_pos.wait_until_get_to_pose(cf_leader_initial_pos[0], cf_leader_initial_pos[1],
-                                        cf_leader_initial_pos[2], yaw=0, threshold=0.1, timeout_threshold=4)
+    # executor_pos.wait_until_get_to_pose(cf_leader_initial_pos[0], cf_leader_initial_pos[1],
+    # cf_leader_initial_pos[2], yaw=0, threshold=0.1, timeout_threshold=4)
     print("Leader reached initial position")
 
     test_leader_follower()

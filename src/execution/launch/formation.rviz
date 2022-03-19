@@ -12,6 +12,7 @@ Panels:
         - /TF1/Frames1
         - /TF1/Tree1
         - /MarkerArray1
+        - /Follower path1
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz/Selection
@@ -98,12 +99,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        crazyflie10/crazyflie10:
-          Value: false
-        crazyflie9/crazyflie9:
-          Value: false
-        world:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -111,11 +106,7 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          crazyflie10/crazyflie10:
-            {}
-          crazyflie9/crazyflie9:
-            {}
+        {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -139,7 +130,7 @@ Visualization Manager:
       Marker Topic: /meshes_array
       Name: MarkerArray
       Namespaces:
-        cf: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -147,7 +138,7 @@ Visualization Manager:
       Marker Topic: /dronesMarkers_array
       Name: DroneMarkers
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -203,8 +194,56 @@ Visualization Manager:
       Marker Topic: /catenaries_array
       Name: Catenaries
       Namespaces:
-        caten_0: true
+        {}
       Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Leader path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /cf_leader/path
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Follower path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /cf_follower/path
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:

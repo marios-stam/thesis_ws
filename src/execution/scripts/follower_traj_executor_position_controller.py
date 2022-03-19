@@ -6,6 +6,8 @@ import numpy as np
 from geometry_msgs.msg import PoseStamped
 import simpleaudio
 import collections
+from nav_msgs.msg import Path
+from common_functions import publish_traj_as_path
 
 try:
     from execution.msg import TrajectoryPolynomialPieceMarios
@@ -320,9 +322,11 @@ def test_traj_matcher_general():
 
     # Go to start position
     pos = follower_tr.eval(0.0).pos
-    rospy.sleep(6)  # wait for take off
+    rospy.sleep(6)  # wait for take off TODO:make this more robust
     print("Follower going to pose:", pos)
     beep()
+    offset = [0, 0, 0]
+    publish_traj_as_path(follower_tr, offset, path_pub)
     executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, 0])
 
 
@@ -375,9 +379,8 @@ if __name__ == "__main__":
         '/cf_leader/start_trajectory', String, executor_pos.leader_started_trajectory)
 
     # Subscribe to trajectory topic and then execute it after going to the first waypoint
-    rospy.Subscriber(
-        'piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
-
+    rospy.Subscriber('piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
+    path_pub = rospy.Publisher('/cf_follower/path', Path, queue_size=10)
     # test_system()  # Used to check the functionality of the system
 
     # test_system_trajectory()

@@ -17,7 +17,7 @@
 - [ ] **Make private repo for NMPC controller**
 - [x] When leader lands land follower too
 - [x] Define follower and leader path file at the formation.launch file
-- [ ] Visualise path at debugging.launch
+- [x] Visualise path at debugging.launch
 
 ## Planning
 
