@@ -27,4 +27,4 @@
 - [x] **Execute trajectory for smooth take-off**
 - [ ] Execute trajectory going to first waypoint of trajectory
 - [x] Make a launch file and change all parameters from there (faster development)
-- [ ] Take into account the floor while planning (minimum distance from the floor)
+- [x] Take into account the floor while planning (minimum distance from the floor)

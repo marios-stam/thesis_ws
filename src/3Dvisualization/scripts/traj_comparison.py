@@ -1,3 +1,4 @@
+from pytest import skip
 import rosbag
 import numpy as np
 from matplotlib import pyplot as plt
@@ -40,7 +41,7 @@ def visualize_bag_ref_trajs(file_path, ax, offset=[0, 0, 0]):
 
     bag.close()
 
-    trajectories = np.array(trajectories)
+    trajectories = np.array(trajectories, dtype=object)
 
     visualize_trajectory_from_matrix(ax, traj_topics, trajectories)
 
@@ -102,12 +103,14 @@ def generate_traj_matrix(traj_topics, bag, offset, dtype=PoseStamped, t_offset=N
             t_offset = t_offset
 
     for i in range(len(traj_topics)):
+        skipped_points = 0
         j = 0
         for topic, msg, t in bag.read_messages(topics=[traj_topics[i]]):
 
             t_now = t.secs
 
             if t_now < t_offset:
+                skipped_points += 1
                 continue
 
             # id = traj_topics.index(topic)
@@ -126,14 +129,14 @@ def generate_traj_matrix(traj_topics, bag, offset, dtype=PoseStamped, t_offset=N
             trajectories[i][j] = pos
             j += 1
 
-        # remove all zero lines after landing
-        # trajectories = np.array(trajectories)
-        # trajectories_without_landing = []
-        # print("trajectories shape:", trajectories.shape)
-        # for i, traj in enumerate(trajectories):
-        #     trajectories_without_landing.append(traj[~np.all(traj == 0, axis=1)])
+    skipped_points = 1 if skipped_points == 0 else skipped_points
 
-        # trajectories = trajectories_without_landing
+    # removing extra zeros
+    trajectories_without_zeros = []
+    for i, traj in enumerate(trajectories):
+        trajectories_without_zeros.append(traj[:-skipped_points])
+
+    trajectories = trajectories_without_zeros
 
     return trajectories
 
