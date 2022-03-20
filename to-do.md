@@ -25,6 +25,8 @@
 - [ ] Design use cases that exhibit the improvements on path planning (custom mesh V shape)
 - [ ] Change easily the degrees of freedom of planning (yaw,drones distance,drones angle)
 - [x] **Execute trajectory for smooth take-off**
-- [ ] Execute trajectory going to first waypoint of trajectory
+- [ ] Execute trajectory going to first waypoint of trajectory (it shouldn't be necessary )
 - [x] Make a launch file and change all parameters from there (faster development)
 - [x] Take into account the floor while planning (minimum distance from the floor)
+- [x] **Optimize based on maximum obstacle clearance (needs test)**
+- [x] Include safety distance above drones
