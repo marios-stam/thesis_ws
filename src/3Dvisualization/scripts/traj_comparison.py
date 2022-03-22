@@ -217,6 +217,8 @@ if __name__ == "__main__":
     bag_file_path = "03-17/angle_90_deg.bag"
     bag_file_path = "03-17/inclined_simple.bag"
     bag_file_path = "03-17/corridor_low.bag"
+    bag_file_path = "03-21/traj.bag"
+
     # bag_file_path = "03-17/angle_90_deg.bag"
 
     # trajectories files

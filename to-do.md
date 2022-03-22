@@ -18,6 +18,8 @@
 - [x] When leader lands land follower too
 - [x] Define follower and leader path file at the formation.launch file
 - [x] Visualise path at debugging.launch
+- [ ] Not start controller if haven't received odometry
+- [ ] **Leader-follower go to start points synchronised**
 
 ## Planning
 
@@ -30,3 +32,8 @@
 - [x] Take into account the floor while planning (minimum distance from the floor)
 - [x] **Optimize based on maximum obstacle clearance (needs test)**
 - [x] Include safety distance above drones
+
+## Notes 21/03/2022
+
+- drones_control hummingbird3.py working
+- drones_control hummingbird3_class.py working
