@@ -162,76 +162,18 @@ class TrajectoryExecutor_Position_Controller:
 
     def take_off(self, height=1):
         if self.odom == None:
-            return False
+            rospy.logerr("No leader odometry received yet")
+            sys.exit()
+
         x, y, z = self.odom.pose.pose.position.x, self.odom.pose.pose.position.y, self.odom.pose.pose.position.z
 
-        self.go_to_pose(x, y, height, 0)
-        self.wait_until_get_to_pose(x, y, height, 0, threshold=0.4)
+        # self.go_to_pose(x, y, height, 0)
+        self.wait_until_get_to_pose(x, y, height, 0, pos_threshold=0.05, timeout_threshold=4)
 
     def land(self):
         print("Landing...")
         # Land string is not necessary, but it is nice to have
         safety_land_publisher.publish("Land")
-
-    def execute_trajectory(self, matrix, relative=False):
-        file_name = exec_pkg_path+"/resources/piecewise_pols/" + \
-            "piecewise_pole_test_{}.csv".format(executor_id)
-
-        np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
-        tr = uav_trajectory.Trajectory()
-
-        # TODO:Load trajectory without using file
-        tr.loadcsv(file_name, skip_first_row=False)
-        self.tr = tr
-        print("duration:", tr.duration)
-
-        rospy.sleep(3)  # sleep for 3 seconds to make sure the drone is stable
-
-        if relative:
-            # if trajectory relative to current position
-            # the drone won't have to move before starting the trajector
-            offset = [self.odom.pose.pose.position.x,
-                      self.odom.pose.pose.position.y, self.odom.pose.pose.position.z]
-            # offset = [0, 4, 1]
-        else:
-            # If not relative the drone has to go first at the starting position
-            offset = [0, 4, 1]
-            start_pose = self.get_traj_start_pose()
-            print("start_pose:", start_pose.pose.position.x,
-                  start_pose.pose.position.y, start_pose.pose.position.z)
-            rospy.sleep(3)
-
-            self.go_to_pose(start_pose.pose.position.x + offset[0],
-                            start_pose.pose.position.y + offset[1],
-                            start_pose.pose.position.z + offset[2], yaw=0)
-
-            self.wait_until_get_to_pose(start_pose.pose.position.x, start_pose.pose.position.y,
-                                        start_pose.pose.position.z, yaw=0, threshold=0.1)
-
-        # frequency of sending references to the controller in hz
-        rate = rospy.Rate(100.0)  # maybe need to increase this
-        t0 = rospy.get_time()
-
-        t = 0
-        dt = 0.1
-        # beep()
-        while not rospy.is_shutdown():
-            t = t+dt
-            if t > tr.duration:
-                break
-
-            evaluation = tr.eval(t)
-            pos, yaw = evaluation.pos, evaluation.yaw
-            x, y, z = pos[0], pos[1], pos[2]
-
-            print("t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
-            self.go_to_pose(x, y, z, yaw, offset=offset)
-            self.wait_until_get_to_pose(
-                x+offset[0], y+offset[1], z+offset[2], yaw, threshold=0.15)
-
-            rate.sleep()
-
-        self.land()
 
     def receive_leader_pose(self, msg):
         if self.leader_started_trajectory_flag == False:
@@ -320,11 +262,14 @@ def test_traj_matcher_general():
     follower_tr.loadcsv(follower_traj_file, skip_first_row=False)
     executor_pos.tr = follower_tr
 
+    # wait until stabilize after take off TODO:make this more robust
+    # executor_pos.take_off(height=0.5)
+
     # Go to start position
     pos = follower_tr.eval(0.0).pos
-    rospy.sleep(6)  # wait for take off TODO:make this more robust
     print("Follower going to pose:", pos)
-    beep()
+    rospy.sleep(2)
+
     offset = [0, 0, 0]
     publish_traj_as_path(follower_tr, offset, path_pub)
     executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, 0])
@@ -332,7 +277,7 @@ def test_traj_matcher_general():
 
 if __name__ == "__main__":
     rospy.init_node("Traj_Executor_Position_Controller", anonymous=True)
-
+    rospy.sleep(5)
     # get command line arguments
     cf_name = str(sys.argv[1])
     leader_cf_name = str(sys.argv[2])
@@ -369,8 +314,7 @@ if __name__ == "__main__":
     print("Got reference...")
 
     executor_pos = TrajectoryExecutor_Position_Controller()
-    odometry_sub = rospy.Subscriber('/pixy/vicon/demo_crazyflie{}/demo_crazyflie{}/odom'.format(executor_id, executor_id),
-                                    Odometry, executor_pos.odometry_callback)
+    odometry_sub = rospy.Subscriber('/pixy/vicon/demo_crazyflie{}/demo_crazyflie{}/odom'.format(executor_id, executor_id), Odometry, executor_pos.odometry_callback)
 
     leader_sub = rospy.Subscriber(
         '/cf_leader/reference', PoseStamped, executor_pos.receive_leader_pose)
@@ -381,11 +325,10 @@ if __name__ == "__main__":
     # Subscribe to trajectory topic and then execute it after going to the first waypoint
     rospy.Subscriber('piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
     path_pub = rospy.Publisher('/cf_follower/path', Path, queue_size=10)
-    # test_system()  # Used to check the functionality of the system
 
-    # test_system_trajectory()
-
-    # test_trajectory_matcher()
+    # Wait for odometry
+    print("Waiting for odometry to be ready..")
+    executor_pos.wait_for_odometry()
 
     test_traj_matcher_general()
 

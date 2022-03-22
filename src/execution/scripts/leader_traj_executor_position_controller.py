@@ -49,7 +49,7 @@ class TrajectoryExecutor_Position_Controller:
 
     def wait_for_odometry(self):
         while self.odom == None:
-            # print("Waiting for odom...")
+            print("Waiting for odom...")
             if rospy.is_shutdown():
                 print(
                     'ctrl+c hit...Shutting down traj_executor_position_controller node...')
@@ -109,7 +109,7 @@ class TrajectoryExecutor_Position_Controller:
 
         self.matrix = matrix
 
-        self.execute_trajectory(matrix)
+        self.execute_trajectory_testing_leader_follower(matrix, relative=False)
 
     def go_to_pose(self, x, y, z, yaw, offset=[0, 0, 0]):
         p = PoseStamped()
@@ -180,6 +180,7 @@ class TrajectoryExecutor_Position_Controller:
         print("Landing...")
         # Land string is not necessary, but it is nice to have
         safety_land_publisher.publish("Land")
+        follower_safety_land_publisher.publish("Land")
 
     def follower_land(self):
         print("Follower landing...")
@@ -190,67 +191,6 @@ class TrajectoryExecutor_Position_Controller:
         print("Stopping integration...")
 
         stop_integrating_publisher.publish("Stop")
-
-    def execute_trajectory(self, matrix, relative=False):
-        file_name = exec_pkg_path+"/resources/piecewise_pols/" + \
-            "piecewise_pole_test_{}.csv".format(executor_id)
-
-        np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
-        tr = uav_trajectory.Trajectory()
-
-        # TODO:Load trajectory without using file
-        tr.loadcsv(file_name, skip_first_row=False)
-        self.tr = tr
-        print("duration:", tr.duration)
-
-        if relative:
-            # if trajectory relative to current position
-            # the drone won't have to move before starting the trajector
-            # offset = [self.odom.pose.pose.position.x,
-            #           self.odom.pose.pose.position.y, self.odom.pose.pose.position.z]
-            offset = [0, 4, 1]
-
-        else:
-            # If not relative the drone has to go first at the starting position
-            offset = [0, 0, 0]
-            start_pose = self.get_traj_start_pose()
-            print("start_pose:", start_pose.pose.position.x,
-                  start_pose.pose.position.y, start_pose.pose.position.z)
-            rospy.sleep(1)
-
-            self.go_to_pose(start_pose.pose.position.x + offset[0],
-                            start_pose.pose.position.y + offset[1],
-                            start_pose.pose.position.z + offset[2], yaw=0)
-
-            self.wait_until_get_to_pose(start_pose.pose.position.x, start_pose.pose.position.y,
-                                        start_pose.pose.position.z, yaw=0, threshold=0.1)
-
-        rospy.sleep(1)
-
-        # frequency of sending references to the controller in hz
-        rate = rospy.Rate(100.0)  # maybe need to increase this
-        t0 = rospy.get_time()
-
-        t = 0
-        dt = 0.1
-        start_traj_publisher.publish("Start")
-        while not rospy.is_shutdown():
-            t = t+dt
-            if t > tr.duration:
-                break
-
-            evaluation = tr.eval(t)
-            pos, yaw = evaluation.pos, evaluation.yaw
-            x, y, z = pos[0], pos[1], pos[2]
-
-            print("t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
-            self.go_to_pose(x, y, z, yaw, offset=offset)
-            self.wait_until_get_to_pose(
-                x+offset[0], y+offset[1], z+offset[2], yaw, threshold=0.15)
-
-            rate.sleep()
-
-        self.land()
 
     def execute_trajectory_testing_leader_follower(self, matrix, relative=False):
         exec_pkg_path = rospack.get_path('execution')
@@ -282,12 +222,11 @@ class TrajectoryExecutor_Position_Controller:
         # publish executed trajectory for visualization
 
         print("Leader taking off...")
-        self.take_off(height=0.5)
-        # self.take_off_traj()
 
         publish_traj_as_path(tr, offset, path_pub)
 
         start_pose = self.get_traj_start_pose()
+        rospy.sleep(2)
 
         print("Leader going to start_pose:", start_pose.pose.position.x,
               start_pose.pose.position.y, start_pose.pose.position.z)
@@ -301,8 +240,6 @@ class TrajectoryExecutor_Position_Controller:
 
         print("Leader is at start_pose")
         beep()
-        self.stop_integrating()
-        rospy.sleep(1)
 
         # frequency of sending references to the controller in hz
         freq = 100
@@ -357,6 +294,8 @@ def test_leader_follower():
         print("Reshaping Matrix to (1,33) shape")
         matrix = matrix.reshape(1, 33)
 
+    print("Waiting for odometry")
+    executor_pos.wait_for_odometry()
     # executing trajectory
     executor_pos.execute_trajectory_testing_leader_follower(matrix, relative=False)
 
@@ -365,7 +304,7 @@ def test_leader_follower():
 
 if __name__ == "__main__":
     rospy.init_node("Traj_Executor_Position_Controller", anonymous=True)
-
+    rospy.sleep(5)
     cf_leader_initial_pos = [rospy.get_param(
         "/cf_leader_x"), rospy.get_param("/cf_leader_y"), rospy.get_param("/cf_leader_z")]
 
@@ -405,22 +344,17 @@ if __name__ == "__main__":
                                     Odometry, executor_pos.odometry_callback)
 
     # Subscribe to trajectory topic and then execute it after going to the first waypoint
-    rospy.Subscriber(
-        'piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
+    rospy.Subscriber('piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
 
     # Publish path of the leader for visualization
     path_pub = rospy.Publisher('/cf_leader/path', Path, queue_size=10)
 
-    # Wait for odometry
-    # print("Waiting for odometry to be ready..")
-    # executor_pos.wait_for_odometry()
-
     # wait to get to the initial position before executing any trajectory
-    print("Waiting to get to initial position before executing any trajectory")
-    print("cf_leader_initial_pos:", cf_leader_initial_pos)
+    # print("Waiting to get to initial position before executing any trajectory")
+    # print("cf_leader_initial_pos:", cf_leader_initial_pos)
     # executor_pos.wait_until_get_to_pose(cf_leader_initial_pos[0], cf_leader_initial_pos[1],
     # cf_leader_initial_pos[2], yaw=0, threshold=0.1, timeout_threshold=4)
-    print("Leader reached initial position")
+    # print("Leader reached initial position")
 
     test_leader_follower()
 
