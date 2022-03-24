@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import rospy
 from rospy.client import INFO
 import numpy as np
@@ -30,3 +31,20 @@ def publish_traj_as_path(tr: uav_trajectory.Trajectory, offset: list, pub: rospy
         path.poses.append(pose)
 
     pub.publish(path)
+
+
+def check_ctrl_c():
+    if rospy.is_shutdown():
+        raise KeyboardInterrupt
+
+
+def get_executor_id(cf_name):
+    # get id after prefix
+    try:
+        common_prefix = "demo_crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+    except:
+        common_prefix = "crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+
+    return executor_id

@@ -6,7 +6,7 @@
 	<arg name="cf_1_x" value="0  " /> 
 	<arg name="cf_1_y" value="4  " />
 	<arg name="cf_1_z" value="0.5" />
-	<param name="cf_leader_traj" value="$(find drone_path_planning)/resources/trajectories/Pol_matrix_1.csv" />
+	<param name="cf_leader_traj" value="$(find drone_path_planning)/resources/trajectories/Pol_matrix_1_90_deg.csv" />
 	<!-- ================================ /LEADER ================================ -->
 
 	<!-- =============================== FOLLOWER =============================== -->
@@ -15,7 +15,7 @@
   	<arg name="cf_2_x" value="-1" />
 	<arg name="cf_2_y" value=" 4" />
 	<arg name="cf_2_z" value=" 0.5" />
-	<param name="cf_follower_traj" value="$(find drone_path_planning)/resources/trajectories/Pol_matrix_2.csv" />
+	<param name="cf_follower_traj" value="$(find drone_path_planning)/resources/trajectories/Pol_matrix_2_90_deg.csv" />
 	<!-- =============================== /FOLLOWER =============================== -->
 	
 
@@ -33,7 +33,7 @@
 	
 
 	<group ns="cf_leader">
-		<node name="cf_controller" pkg="drones_control" type="hummingbird3_class.py"    args="$(arg cf_leader_name) 
+		<node name="cf_controller" pkg="drones_control" type="hummingbird3_class.py"  output="screen"  args="$(arg cf_leader_name) 
 			$(arg cf_1_x) $(arg cf_1_y) $(arg cf_1_z)" />
   		<node name="traj_executor" pkg="execution" type="leader_traj_executor_position_controller.py" output="screen" args="$(arg cf_leader_name)" />
 	</group>
@@ -47,10 +47,12 @@
 	
 	<!-- Visualizations  -->
 	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment.dae" /> -->
+	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-corridor-narrow-easy.dae" />	 -->
 	
 	<!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find execution)/launch/formation.rviz" output="log"/> -->
 	<!-- <node name="mesh_renderer" pkg="3Dvisualization" type="render_mesh.py"  args="$(arg env_mesh_path)" /> -->
 	<!-- <node name="drones_vis"    pkg="3Dvisualization" type="droneMarkerVis.py"  /> -->
+	<!-- <node name="catenaries_listener"    pkg="catenaries" type="catenaries_listener.py"  args="1"  />  	 -->
 	<node name="error_calc"    pkg="3Dvisualization" type="error_calc.py"  />
 
 </launch>

@@ -7,8 +7,8 @@ from geometry_msgs.msg import PoseStamped
 import simpleaudio
 import collections
 from nav_msgs.msg import Path
-from common_functions import publish_traj_as_path
-
+from common_functions import publish_traj_as_path, check_ctrl_c, get_executor_id
+from std_msgs.msg import Bool
 try:
     from execution.msg import TrajectoryPolynomialPieceMarios
 except:
@@ -53,6 +53,7 @@ class TrajectoryExecutor_Position_Controller:
         self.leader_started_trajectory_flag = False
         self.traj_matcher = None
         self.tr = None
+        self.leader_synced = False
 
     def odometry_callback(self, odom: Odometry):
         self.odom = odom
@@ -60,12 +61,8 @@ class TrajectoryExecutor_Position_Controller:
     def wait_for_odometry(self):
         while self.odom == None:
             # print("Waiting for odom...")
-            if rospy.is_shutdown():
-                print(
-                    'ctrl+c hit...Shutting down traj_executor_position_controller node...')
-                sys.exit()
+            check_ctrl_c()
 
-    # threshold propably needs tuning
     def wait_until_get_to_pose(self, x, y, z, yaw, pos_threshold=0.4, timeout_threshold=4):
         # Wait until the crazyflie gets to the pose-->nomrm(error) is smaller than threshold value
         # or timeout occurs (timeout_threshold)
@@ -205,6 +202,33 @@ class TrajectoryExecutor_Position_Controller:
         print("Leader started the trajectory")
         self.leader_started_trajectory_flag = True
 
+    def wait_to_stabilize(self, vel_thershold=0.02):
+        # wait until the drone is stabilized (velocity magnitude below threshold)
+
+        stabilized = False
+        altitude = 0
+        rate = rospy.Rate(20)
+
+        while (not stabilized) or (altitude < 0.3):
+            check_ctrl_c()
+            # get velocities
+            velocities = [self.odom.twist.twist.linear.x,
+                          self.odom.twist.twist.linear.y]
+
+            altitude = self.odom.pose.pose.position.z
+
+            stabilized = all(abs(vel) < vel_thershold for vel in velocities)
+            rate.sleep()
+
+    def wait_for_leader_sync(self):
+        # wait until the leader sends sync signal
+        while not self.leader_synced:
+            check_ctrl_c()
+
+    def leader_sync_callback(self, msg: Bool):
+        print("Received sync signal from leader")
+        self.leader_synced = msg.data
+
 
 def test_trajectory_matcher():
     traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
@@ -254,6 +278,7 @@ def test_traj_matcher_general():
 
     if leader_matrix.shape[0] == 33:
         leader_matrix = leader_matrix.reshape(1, 33)
+
     executor_pos.matrix = leader_matrix
     executor_pos.traj_matcher = trajectory_matcher_time_based(leader_matrix)
 
@@ -263,12 +288,14 @@ def test_traj_matcher_general():
     executor_pos.tr = follower_tr
 
     # wait until stabilize after take off TODO:make this more robust
-    # executor_pos.take_off(height=0.5)
+    executor_pos.wait_to_stabilize()
+    stabilized_pub.publish(True)
 
+    executor_pos.wait_for_leader_sync()
+    print("FOLLOWER:Received SYNC signal...")
     # Go to start position
     pos = follower_tr.eval(0.0).pos
     print("Follower going to pose:", pos)
-    rospy.sleep(2)
 
     offset = [0, 0, 0]
     publish_traj_as_path(follower_tr, offset, path_pub)
@@ -283,25 +310,13 @@ if __name__ == "__main__":
     leader_cf_name = str(sys.argv[2])
 
     # get id after prefix
-    try:
-        common_prefix = "demo_crazyflie"
-        executor_id = int(cf_name[len(common_prefix):])
-    except Exception as e:
-        common_prefix = "crazyflie"
-        executor_id = int(cf_name[len(common_prefix):])
-
-    try:
-        common_prefix = "demo_crazyflie"
-        leader_id = int(leader_cf_name[len(common_prefix):])
-    except Exception as e:
-        common_prefix = "crazyflie"
-        leader_id = int(leader_cf_name[len(common_prefix):])
+    executor_id = get_executor_id(cf_name)
+    leader_id = get_executor_id(leader_cf_name)
 
     print("Executor follower position controller with id:", executor_id)
     print("Leader position controller with id:", leader_id)
 
-    safety_land_publisher = rospy.Publisher(
-        'safety_land', String, queue_size=10)
+    safety_land_publisher = rospy.Publisher('safety_land', String, queue_size=10)
     pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
 
     # print("Waiting to connect to reference topic..")
@@ -314,17 +329,19 @@ if __name__ == "__main__":
     print("Got reference...")
 
     executor_pos = TrajectoryExecutor_Position_Controller()
-    odometry_sub = rospy.Subscriber('/pixy/vicon/demo_crazyflie{}/demo_crazyflie{}/odom'.format(executor_id, executor_id), Odometry, executor_pos.odometry_callback)
+    odometry_sub = rospy.Subscriber('/pixy/vicon/demo_crazyflie{}/demo_crazyflie{}/odom'.format(executor_id,
+                                    executor_id), Odometry, executor_pos.odometry_callback)
 
-    leader_sub = rospy.Subscriber(
-        '/cf_leader/reference', PoseStamped, executor_pos.receive_leader_pose)
+    leader_sub = rospy.Subscriber('/cf_leader/reference', PoseStamped, executor_pos.receive_leader_pose)
 
-    start_traj_sub = rospy.Subscriber(
-        '/cf_leader/start_trajectory', String, executor_pos.leader_started_trajectory)
+    start_traj_sub = rospy.Subscriber('/cf_leader/start_trajectory', String, executor_pos.leader_started_trajectory)
 
     # Subscribe to trajectory topic and then execute it after going to the first waypoint
     rospy.Subscriber('piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
     path_pub = rospy.Publisher('/cf_follower/path', Path, queue_size=10)
+
+    stabilized_pub = rospy.Publisher('stabilized', Bool, queue_size=10)
+    sync_sub = rospy.Subscriber('/cf_leader/sync', Bool, executor_pos.leader_sync_callback)
 
     # Wait for odometry
     print("Waiting for odometry to be ready..")

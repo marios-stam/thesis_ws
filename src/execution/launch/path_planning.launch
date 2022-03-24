@@ -1,11 +1,12 @@
 <?xml version="1.0"?>
 <launch>
-	<arg name="visual" value="False" />	
+	<arg name="visual" value="1" />	
+
 	<group ns="planning" >
 		<rosparam command="load" file="$(find drone_path_planning)/config/prob_definitiion.yaml" />
 	</group>
 	
-	<node name="path_planner" pkg="drone_path_planning" type="rigidBodyPath.py" output="screen"/>
+	<!-- <node name="path_planner" pkg="drone_path_planning" type="rigidBodyPath.py" output="screen"/> -->
 	
 
   	<include file="$(find execution)/launch/Rviz.launch" if="$(arg visual)" >
