@@ -37,13 +37,11 @@ def beep():
 
 
 def handle_new_trajectory(piece_pol):
-    cf_id = piece_pol.cf_id
-    print("Received new trajectory with cfid:", cf_id, "...")
-
-    if cf_id == executor_id:
+    cf_id = int(piece_pol.cf_id)
+    print("FOLLOWER: Received new trajectory with cfid:", cf_id, "...")
+    if cf_id == 1:
         executor_pos.receive_executor_trajectory(piece_pol)
-
-    elif cf_id == leader_id:
+    elif cf_id == 0:
         executor_pos.receive_leader_trajectory(piece_pol)
 
 
@@ -85,13 +83,10 @@ class TrajectoryExecutor_Position_Controller:
             time.sleep(0.1)
 
     def receive_executor_trajectory(self, piece_pol):
-        print("Crazyflie with id:", executor_id, "received trajectory...")
+        print("Crazyflie with id:", executor_id, "received follower trajectory...")
+        matrix = TrajectoryExecutor_Position_Controller.build_matrix_from_traj_msg(piece_pol)
 
-        matrix = TrajectoryExecutor_Position_Controller.build_matrix_from_traj_msg(
-            piece_pol)
-
-        file_name = exec_pkg_path+"/resources/piecewise_pols/" + \
-            "piecewise_pole_test_{}.csv".format(executor_id)
+        file_name = exec_pkg_path+"/resources/piecewise_pols/piecewise_pole_test_{}.csv".format(executor_id)
         np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
         tr = uav_trajectory.Trajectory()
 
@@ -102,8 +97,7 @@ class TrajectoryExecutor_Position_Controller:
     def receive_leader_trajectory(self, piece_pol):
         # Receives the leader trajectory and initialize the trajectory matcher with it
         print("Crazyflie with id:", leader_id, "received leader trajectory...")
-        matrix = TrajectoryExecutor_Position_Controller.build_matrix_from_traj_msg(
-            piece_pol)
+        matrix = TrajectoryExecutor_Position_Controller.build_matrix_from_traj_msg(piece_pol)
         self.traj_matcher = trajectory_matcher_time_based(matrix)
 
     def build_matrix_from_traj_msg(piece_pol):
@@ -186,8 +180,11 @@ class TrajectoryExecutor_Position_Controller:
             return
 
         self.leader_pose = msg
-        t = self.traj_matcher.get_corresponding_t(
-            self.leader_pose.pose.position)
+        try:
+            t = self.traj_matcher.get_corresponding_t(self.leader_pose.pose.position)
+        except:
+            print("Error in getting corresponding t")
+            return
 
         evaluation = self.tr.eval(t)
         pos, yaw = evaluation.pos, evaluation.yaw
@@ -219,6 +216,10 @@ class TrajectoryExecutor_Position_Controller:
 
             stabilized = all(abs(vel) < vel_thershold for vel in velocities)
             rate.sleep()
+        pose = PoseStamped()
+        pose.header.stamp = rospy.Time.now()
+        pose.pose.position = self.odom.pose.pose.position
+        stabilized_pos_pub.publish(pose)
 
     def wait_for_leader_sync(self):
         # wait until the leader sends sync signal
@@ -289,7 +290,6 @@ def test_traj_matcher_general():
 
     # wait until stabilize after take off TODO:make this more robust
     executor_pos.wait_to_stabilize()
-    stabilized_pub.publish(True)
 
     executor_pos.wait_for_leader_sync()
     print("FOLLOWER:Received SYNC signal...")
@@ -337,10 +337,12 @@ if __name__ == "__main__":
     start_traj_sub = rospy.Subscriber('/cf_leader/start_trajectory', String, executor_pos.leader_started_trajectory)
 
     # Subscribe to trajectory topic and then execute it after going to the first waypoint
-    rospy.Subscriber('piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
+    rospy.Subscriber('/piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
     path_pub = rospy.Publisher('/cf_follower/path', Path, queue_size=10)
 
-    stabilized_pub = rospy.Publisher('stabilized', Bool, queue_size=10)
+    # wait until stabilize after take off and then send its position
+    stabilized_pos_pub = rospy.Publisher('stabilized', PoseStamped, queue_size=10)
+
     sync_sub = rospy.Subscriber('/cf_leader/sync', Bool, executor_pos.leader_sync_callback)
 
     # Wait for odometry

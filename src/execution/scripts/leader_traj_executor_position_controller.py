@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from math import atan2
 import rospy
 from rospy.client import INFO
 import numpy as np
@@ -8,6 +9,7 @@ import simpleaudio
 from nav_msgs.msg import Path
 from common_functions import publish_traj_as_path, check_ctrl_c, get_executor_id
 from std_msgs.msg import Bool
+from drone_path_planning.msg import planning_state
 
 try:
     from execution.msg import TrajectoryPolynomialPieceMarios
@@ -38,14 +40,14 @@ def handle_new_trajectory(piece_pol):
     cf_id = piece_pol.cf_id
     print("Received new trajectory with cfid:", cf_id, "...")
 
-    if cf_id == executor_id:
+    if cf_id == 0:
         executor_pos.receive_trajectory(piece_pol)
 
 
 class TrajectoryExecutor_Position_Controller:
     def __init__(self, ) -> None:
         self.odom = None
-        self.follower_stabilized = False
+        self.follower_stabilized_pos = None
 
     def odometry_callback(self, odom: Odometry):
         self.odom = odom
@@ -283,19 +285,56 @@ class TrajectoryExecutor_Position_Controller:
 
     def wait_follower_to_stabilize(self):
         rate = rospy.Rate(20)
-        while not self.follower_stabilized:
+        while self.follower_stabilized_pos == None:
             check_ctrl_c()
             rate.sleep()
 
-    def follower_stabilized_callback(self, msg):
-        print("Follower stabilized")
-        self.follower_stabilized = msg.data
+    def follower_stabilized_callback(self, msg: PoseStamped):
+        # Follower is stabilized and then sends its position to the leader
+        self.follower_stabilized_pos = [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
+        print("Follower stabilized at position:", self.follower_stabilized_pos)
+        self.follower_stabilized = True
 
     def publish_sync_signal(self):
         sync_pub.publish(True)
 
     def publish_start_trajectory(self):
         start_traj_publisher.publish("Start")
+
+
+def live_planning():
+    # wait for odometry to be available
+    executor_pos.wait_for_odometry()
+    print("Waiting for odometry")
+    executor_pos.wait_for_odometry()
+
+    print("Leader waiting to stabilize...")
+    executor_pos.wait_to_stabilize(vel_thershold=0.02)
+    print("Leader waiting Folllower to stabilize...")
+    executor_pos.wait_follower_to_stabilize()
+
+    print("Planning with current poses as start...")
+    l_pos = [executor_pos.odom.pose.pose.position.x,
+             executor_pos.odom.pose.pose.position.y,
+             executor_pos.odom.pose.pose.position.z]
+
+    f_pos = executor_pos.follower_stabilized_pos
+    print("Leader stabilized pos:", l_pos)
+    print("Follower stabilized pos:", f_pos)
+    # get rigid body start coords
+    rb_x = min(l_pos[0], f_pos[0]) + abs(l_pos[0]-f_pos[0])/2
+    rb_y = min(l_pos[1], f_pos[1]) + abs(l_pos[1]-f_pos[1])/2
+    rb_z = min(l_pos[2], f_pos[2]) + abs(l_pos[2]-f_pos[2])/2
+    rb_pos = [rb_x, rb_y, rb_z]
+    rb_yaw = 0
+    drones_distance = abs(rb_x)
+    theta = atan2(l_pos[0]-f_pos[0], l_pos[2]-f_pos[2])
+    rb_state = [rb_x, rb_y, rb_z, rb_yaw, drones_distance, theta]
+    print("Rigid body start state:", rb_state)
+    state = planning_state()
+    state.x, state.y, state.z, state.yaw, state.drones_distance, state.drones_angle = rb_state
+    start_planning_publisher.publish(state)
+    print("Published planning start state")
 
 
 def test_leader_follower():
@@ -357,23 +396,20 @@ if __name__ == "__main__":
                                     Odometry, executor_pos.odometry_callback)
 
     # Subscribe to trajectory topic and then execute it after going to the first waypoint
-    rospy.Subscriber('piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
+    rospy.Subscriber('/piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
 
     # Publish path of the leader for visualization
     path_pub = rospy.Publisher('/cf_leader/path', Path, queue_size=10)
 
     # Drones communication
     start_traj_publisher = rospy.Publisher('start_trajectory', String, queue_size=10)
-    follower_stab = rospy.Subscriber('/cf_follower/stabilized', Bool, executor_pos.follower_stabilized_callback)
+    follower_stab = rospy.Subscriber('/cf_follower/stabilized', PoseStamped, executor_pos.follower_stabilized_callback)
+
     sync_pub = rospy.Publisher('sync', Bool, queue_size=10)
 
-    # wait to get to the initial position before executing any trajectory
-    # print("Waiting to get to initial position before executing any trajectory")
-    # print("cf_leader_initial_pos:", cf_leader_initial_pos)
-    # executor_pos.wait_until_get_to_pose(cf_leader_initial_pos[0], cf_leader_initial_pos[1],
-    # cf_leader_initial_pos[2], yaw=0, threshold=0.1, timeout_threshold=4)
-    # print("Leader reached initial position")
+    start_planning_publisher = rospy.Publisher('/start_planning', planning_state, queue_size=10)
 
-    test_leader_follower()
+    # test_leader_follower()
+    live_planning()
 
     rospy.spin()
