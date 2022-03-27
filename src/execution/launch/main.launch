@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+	<arg name="planning_time" value="before_take_off" /> 
+	<!-- <arg name="planning_time" value="live" />  -->
+	
+
+	<param name="planning_time" type="string" value="$(arg planning_time)" />
+
+	<include file="$(find crazyflie_demo)/launch/crazyflie_2.launch"/>
+
+	<group  if="$(eval planning_time == 'live')">
+		<include file="$(find execution)/launch/live_formation.launch"/>
+  	</group>
+	
+	<group  if="$(eval planning_time == 'before_take_off')">
+  		<node name="roslaunch_sequencer" pkg="execution" type="launch_sequence.py" output="screen" />
+  	</group>
+
+
+
+
+</launch>

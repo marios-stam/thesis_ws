@@ -409,8 +409,16 @@ if __name__ == "__main__":
     print("Waiting for odometry to be ready..")
     executor_pos.wait_for_odometry()
 
+    planning_time = rospy.get_param("/planning_time")
     # test_traj_matcher_general()
-    live_planning()
-    # planning_before_take_off()
+    if planning_time == "before_take_off":
+        print("FOLLOWER:Planning before take off")
+        planning_before_take_off()
+    elif planning_time == "live":
+        print("FOLLOWER:Live planning")
+        live_planning()
+    else:
+        rospy.logerr("Invalid planning time:", planning_time)
+        sys.exit()
 
     rospy.spin()

@@ -256,7 +256,7 @@ class TrajectoryExecutor_Position_Controller:
             pos, yaw = evaluation.pos, evaluation.yaw
             x, y, z = pos[0], pos[1], pos[2]
 
-            print("Leader", "t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
+            # print("Leader", "t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
             self.go_to_pose(x, y, z, yaw, offset=offset)
             # wait until get to pose with a timeout
             # self.wait_until_get_to_pose(
@@ -427,8 +427,16 @@ if __name__ == "__main__":
 
     start_planning_publisher = rospy.Publisher('/start_planning', planning_state, queue_size=10)
 
+    planning_time = rospy.get_param("/planning_time")
     # test_leader_follower()
-    live_planning()
-    # planning_before_take_off()
+    if planning_time == "before_take_off":
+        print("LEADER:Planning before take off")
+        planning_before_take_off()
+    elif planning_time == "live":
+        print("LEADER:Planning live")
+        live_planning()
+    else:
+        rospy.logerr("Invalid planning time:", planning_time)
+        sys.exit()
 
     rospy.spin()

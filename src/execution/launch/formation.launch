@@ -6,7 +6,7 @@
 	<arg name="cf_1_x" value="0  " /> 
 	<arg name="cf_1_y" value="4  " />
 	<arg name="cf_1_z" value="0.5" />
-	<param name="cf_leader_traj" value="$(find drone_path_planning)/resources/trajectories/Pol_matrix_1_90_deg.csv" />
+	<param name="cf_leader_traj" value="$(find drone_path_planning)/resources/trajectories/Pol_matrix_1.csv" />
 	<!-- ================================ /LEADER ================================ -->
 
 	<!-- =============================== FOLLOWER =============================== -->
@@ -15,7 +15,7 @@
   	<arg name="cf_2_x" value="-1" />
 	<arg name="cf_2_y" value=" 4" />
 	<arg name="cf_2_z" value=" 0.5" />
-	<param name="cf_follower_traj" value="$(find drone_path_planning)/resources/trajectories/Pol_matrix_2_90_deg.csv" />
+	<param name="cf_follower_traj" value="$(find drone_path_planning)/resources/trajectories/Pol_matrix_2.csv" />
 	<!-- =============================== /FOLLOWER =============================== -->
 	
 
