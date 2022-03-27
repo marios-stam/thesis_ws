@@ -49,6 +49,9 @@ class TrajectoryExecutor_Position_Controller:
         self.odom = None
         self.follower_stabilized_pos = None
 
+        self.leader_stabilized = False
+        self.follower_stabilized = False
+
     def odometry_callback(self, odom: Odometry):
         self.odom = odom
 
@@ -111,7 +114,10 @@ class TrajectoryExecutor_Position_Controller:
 
         self.matrix = matrix
 
-        self.execute_trajectory_testing_leader_follower(matrix, relative=False)
+        # If both leader and follower are stabilized, start executing the trajectory
+        # Otherwise, wait until both are stabilized and then do it
+        if self.leader_stabilized and self.follower_stabilized:
+            self.execute_trajectory_testing_leader_follower(matrix, relative=False)
 
     def go_to_pose(self, x, y, z, yaw, offset=[0, 0, 0]):
         p = PoseStamped()
@@ -189,15 +195,10 @@ class TrajectoryExecutor_Position_Controller:
         # Land string is not necessary, but it is nice to have
         follower_safety_land_publisher.publish("Land")
 
-    def stop_integrating(self):
-        print("Stopping integration...")
-
-        stop_integrating_publisher.publish("Stop")
-
     def execute_trajectory_testing_leader_follower(self, matrix, relative=False):
         exec_pkg_path = rospack.get_path('execution')
 
-        file_name = exec_pkg_path+"/resources/piecewise_pols/" + "piecewise_pole_test_{}.csv".format(executor_id)
+        file_name = exec_pkg_path+"/resources/piecewise_pols/piecewise_pole_test_{}.csv".format(executor_id)
 
         np.savetxt(file_name,  matrix, delimiter=",", fmt='%.6f')
         tr = uav_trajectory.Trajectory()
@@ -255,7 +256,7 @@ class TrajectoryExecutor_Position_Controller:
             pos, yaw = evaluation.pos, evaluation.yaw
             x, y, z = pos[0], pos[1], pos[2]
 
-            # print("Leader", "t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
+            print("Leader", "t:", t, "x:", x, "y:", y, "z:", z, "yaw:", yaw)
             self.go_to_pose(x, y, z, yaw, offset=offset)
             # wait until get to pose with a timeout
             # self.wait_until_get_to_pose(
@@ -267,7 +268,6 @@ class TrajectoryExecutor_Position_Controller:
 
     def wait_to_stabilize(self, vel_thershold=0.02):
         # wait until the drone is stabilized (velocity magnitude below threshold)
-
         stabilized = False
         altitude = 0
         rate = rospy.Rate(20)
@@ -282,6 +282,8 @@ class TrajectoryExecutor_Position_Controller:
 
             stabilized = all(abs(vel) < vel_thershold for vel in velocities)
             rate.sleep()
+
+        self.leader_stabilized = True
 
     def wait_follower_to_stabilize(self):
         rate = rospy.Rate(20)
@@ -328,13 +330,29 @@ def live_planning():
     rb_pos = [rb_x, rb_y, rb_z]
     rb_yaw = 0
     drones_distance = abs(rb_x)
-    theta = atan2(l_pos[0]-f_pos[0], l_pos[2]-f_pos[2])
+    theta = atan2(l_pos[2]-f_pos[2], l_pos[0]-f_pos[0])
     rb_state = [rb_x, rb_y, rb_z, rb_yaw, drones_distance, theta]
     print("Rigid body start state:", rb_state)
     state = planning_state()
     state.x, state.y, state.z, state.yaw, state.drones_distance, state.drones_angle = rb_state
     start_planning_publisher.publish(state)
     print("Published planning start state")
+
+
+def planning_before_take_off():
+    # wait for odometry to be available
+    executor_pos.wait_for_odometry()
+    print("Waiting for odometry")
+    executor_pos.wait_for_odometry()
+
+    print("Leader waiting to stabilize...")
+    executor_pos.wait_to_stabilize(vel_thershold=0.02)
+    print("Leader waiting Folllower to stabilize...")
+    executor_pos.wait_follower_to_stabilize()
+
+    matrix = executor_pos.matrix
+    executor_pos.execute_trajectory_testing_leader_follower(matrix, relative=False)
+    executor_pos.land()
 
 
 def test_leader_follower():
@@ -411,5 +429,6 @@ if __name__ == "__main__":
 
     # test_leader_follower()
     live_planning()
+    # planning_before_take_off()
 
     rospy.spin()

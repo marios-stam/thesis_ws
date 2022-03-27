@@ -27,6 +27,7 @@ import rospkg
 # get an instance of RosPack with the default search paths
 rospack = rospkg.RosPack()
 exec_pkg_path = rospack.get_path('execution')
+drone_path_planning_path = rospack.get_path('drone_path_planning')
 
 
 def beep():
@@ -60,6 +61,7 @@ class TrajectoryExecutor_Position_Controller:
         while self.odom == None:
             # print("Waiting for odom...")
             check_ctrl_c()
+            rospy.sleep(0.1)
 
     def wait_until_get_to_pose(self, x, y, z, yaw, pos_threshold=0.4, timeout_threshold=4):
         # Wait until the crazyflie gets to the pose-->nomrm(error) is smaller than threshold value
@@ -230,6 +232,17 @@ class TrajectoryExecutor_Position_Controller:
         print("Received sync signal from leader")
         self.leader_synced = msg.data
 
+    def go_to_traj_start_pos(self, offset=[0, 0, 0]):
+        # Go to start position
+        if self.tr == None:
+            rospy.logerr("No trajectory received yet")
+            sys.exit()
+
+        pos = self.tr.eval(0.0).pos
+        print("Follower going to pose: {} with offset: {}".format(pos, offset))
+
+        executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=offset)
+
 
 def test_trajectory_matcher():
     traj_file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/scripts/figure8.csv"
@@ -302,6 +315,55 @@ def test_traj_matcher_general():
     executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, 0])
 
 
+def planning_before_take_off():
+    prefix_path = drone_path_planning_path+"/resources/trajectories/"
+    leader_traj_file = prefix_path + "Pol_matrix_leader.csv"
+    follower_traj_file = prefix_path + "Pol_matrix_follower.csv"
+
+    print("leader_traj_file:", leader_traj_file)
+    print("follower_traj_file:", follower_traj_file)
+
+    # Load leader trajectory
+    leader_matrix = np.loadtxt(leader_traj_file, delimiter=",", skiprows=0, usecols=range(33))
+
+    if leader_matrix.shape[0] == 33:
+        leader_matrix = leader_matrix.reshape(1, 33)
+
+    executor_pos.matrix = leader_matrix
+    executor_pos.traj_matcher = trajectory_matcher_time_based(leader_matrix)
+
+    # Load follower trajectory
+    follower_tr = uav_trajectory.Trajectory()
+    follower_tr.loadcsv(follower_traj_file, skip_first_row=False)
+    executor_pos.tr = follower_tr
+
+    # wait until stabilize after take off
+    executor_pos.wait_to_stabilize()
+
+    executor_pos.wait_for_leader_sync()
+    print("FOLLOWER:Received SYNC signal...")
+    # Go to start position
+    pos = follower_tr.eval(0.0).pos
+    print("Follower going to pose:", pos)
+
+    offset = [0, 0, 0]
+    publish_traj_as_path(follower_tr, offset, path_pub)
+    executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, 0])
+
+
+def live_planning():
+    # wait until stabilize after take off
+    print("FOLLOWER:Waiting to stabilize...")
+    executor_pos.wait_to_stabilize()
+    print("FOLLOWER:Stabilized...")
+
+    executor_pos.wait_for_leader_sync()
+    print("FOLLOWER:Received SYNC signal...")
+
+    print("FOLLOWER:Going to start position...")
+    executor_pos.go_to_traj_start_pos(offset=[0, 0, 0])
+
+
 if __name__ == "__main__":
     rospy.init_node("Traj_Executor_Position_Controller", anonymous=True)
     rospy.sleep(5)
@@ -325,12 +387,10 @@ if __name__ == "__main__":
     #         sys.exit()
 
     print("Connected to reference topic")
-
-    print("Got reference...")
-
     executor_pos = TrajectoryExecutor_Position_Controller()
-    odometry_sub = rospy.Subscriber('/pixy/vicon/demo_crazyflie{}/demo_crazyflie{}/odom'.format(executor_id,
-                                    executor_id), Odometry, executor_pos.odometry_callback)
+    odom_topic = '/pixy/vicon/demo_crazyflie{}/demo_crazyflie{}/odom'.format(executor_id, executor_id)
+    print("odom_topic:", odom_topic)
+    odometry_sub = rospy.Subscriber(odom_topic, Odometry, executor_pos.odometry_callback)
 
     leader_sub = rospy.Subscriber('/cf_leader/reference', PoseStamped, executor_pos.receive_leader_pose)
 
@@ -349,6 +409,8 @@ if __name__ == "__main__":
     print("Waiting for odometry to be ready..")
     executor_pos.wait_for_odometry()
 
-    test_traj_matcher_general()
+    # test_traj_matcher_general()
+    live_planning()
+    # planning_before_take_off()
 
     rospy.spin()

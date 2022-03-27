@@ -12,8 +12,12 @@
 		<rosparam command="load" file="$(find drone_path_planning)/config/prob_definitiion.yaml" />
 	</group>
 	
-	<!-- <node name="path_planner" pkg="drone_path_planning" type="rigidBodyPath.py" output="screen"/> -->
+	<node name="start_path_planner" pkg="execution" type="planner_start.py" output="screen"/>
+
+	<node name="path_planner" pkg="drone_path_planning" type="planner_live.py" output="screen"/>
 	
+	<node name="traj_generator" pkg="drone_path_planning" type="drones_traj_generator.py" output="screen"/>
+	<node name="pols_generator" pkg="drone_path_planning" type="drones_pols_generator.py" output="screen"/>
 
   	<!-- <include file="$(find execution)/launch/Rviz.launch" if="$(arg visual)" > -->
 	<!-- </include> -->

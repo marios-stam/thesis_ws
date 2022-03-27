@@ -48,3 +48,10 @@ def get_executor_id(cf_name):
         executor_id = int(cf_name[len(common_prefix):])
 
     return executor_id
+
+
+def get_leader_follower_names():
+    leader = rospy.get_param("/cf_leader_name")
+    follower = rospy.get_param("/cf_follower_name")
+
+    return leader, follower

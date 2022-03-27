@@ -3,7 +3,7 @@
 	<group ns="planning" >
 		<rosparam command="load" file="$(find drone_path_planning)/config/prob_definitiion.yaml" />
 	</group>
-	
+
 	<node name="path_planner"  pkg="drone_path_planning" type="planner_live.py" output="screen" args="1"/>
 	<node name="traj_generator" pkg="drone_path_planning" type="drones_traj_generator.py" output="screen"/>
 	<node name="pols_generator" pkg="drone_path_planning" type="drones_pols_generator.py" output="screen"/>
@@ -41,15 +41,15 @@
 	
 
 	<group ns="cf_leader">
-		<node name="cf_controller" pkg="drones_control" type="hummingbird3_class.py"  output="screen"  args="$(arg cf_leader_name) 
+		<node name="cf_controller" pkg="drones_control" type="hummingbird3_class.py"    args="$(arg cf_leader_name) 
 			$(arg cf_1_x) $(arg cf_1_y) $(arg cf_1_z)" />
-  		<node name="traj_executor" pkg="execution" type="leader_traj_executor_position_controller.py"  args="$(arg cf_leader_name)" />
+  		<node name="traj_executor" pkg="execution" type="leader_traj_executor_position_controller.py" output="screen"  args="$(arg cf_leader_name)" />
 	</group>
 
 	<group ns="cf_follower">
 		<node name="cf_controller" 	pkg="drones_control" type="hummingbird3_class.py"   args="$(arg cf_follower_name)  
 			$(arg cf_2_x) $(arg cf_2_y) $(arg cf_2_z) " />
-  		<node name="traj_executor" pkg="execution" type="follower_traj_executor_position_controller.py" output="screen" args="$(arg cf_follower_name) $(arg cf_leader_name) " />
+  		<node name="traj_executor" pkg="execution" type="follower_traj_executor_position_controller.py"  args="$(arg cf_follower_name) $(arg cf_leader_name) " />
 	</group>
 	
 	
