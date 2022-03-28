@@ -203,6 +203,7 @@ install(PROGRAMS
   scripts/land_all.py
   scripts/launch_sequence.py
   scripts/planner_start.py
+  scripts/launch_sequence_offline.py
   
   scripts/hummingbird3.py
   scripts/open_gen.py
