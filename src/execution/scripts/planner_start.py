@@ -44,6 +44,11 @@ class PathPlanningStart:
             print("Rigid body start state:", rb_state)
             state = planning_state()
             state.x, state.y, state.z, state.yaw, state.drones_distance, state.drones_angle = rb_state
+
+            print("Waitig connections to /start_planning ...")
+            while start_planning_publisher.get_num_connections() == 0:
+                pass
+
             start_planning_publisher.publish(state)
             print("Published planning start state")
 

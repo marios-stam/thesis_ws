@@ -46,9 +46,11 @@
 	
 	<!-- Visualizations  -->
 	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/stl/env-scene-ltu-experiment.stl" /> -->
-	<arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-hole-inclined.dae" />
+	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-hole-inclined.dae" /> -->
 	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-corridor-narrow.dae" />	 -->
 	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-corridor-narrow-easy.dae" />	 -->
+	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-small-hole.dae" /> -->
+	<arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-tunnel2.dae" />	
 	
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find execution)/launch/formation.rviz" output="log"/>
 	<node name="mesh_renderer" pkg="3Dvisualization" type="render_mesh.py"  args="$(arg env_mesh_path)" />

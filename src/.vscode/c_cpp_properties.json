@@ -1,0 +1,25 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/marios/thesis_ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_cpp/include/**",
+        "/home/marios/thesis_ws/src/libviconstream/include/**",
+        "/home/marios/thesis_ws/src/ompl_example_2d/include/**",
+        "/home/marios/thesis_ws/src/ros_viconstream/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

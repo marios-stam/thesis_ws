@@ -16,20 +16,17 @@ file_name = "/home/marios/thesis_ws/src/execution/launch/path_planning.launch"
 launch.parent = roslaunch.parent.ROSLaunchParent(uuid, [file_name])
 launch.start()
 
-launch2 = roslaunch.scriptapi.ROSLaunch()
 launch3 = roslaunch.scriptapi.ROSLaunch()
 
 
 def planning_finished_callback(msg):
     if not planning_finished_callback.published_once:
         print("Planning finished")
-        file_name = "/home/marios/thesis_ws/src/crazyflie_ros/crazyflie_demo/launch/crazyflie_2.launch"
-        launch2.parent = roslaunch.parent.ROSLaunchParent(uuid, [file_name])
-        launch2.start()
 
         file_name = "/home/marios/thesis_ws/src/execution/launch/formation.launch"
         launch3.parent = roslaunch.parent.ROSLaunchParent(uuid, [file_name])
         launch3.start()
+        print("SEQUENCER: Launching", file_name)
 
         planning_finished_callback.published_once = False
 
@@ -38,16 +35,21 @@ planning_finished_callback.published_once = False
 
 
 if __name__ == '__main__':
+    """
+    This script is responsible for launching the path planning before take off,
+    which deems as starting positions of  the drones,their current ones with a z (height) offset.
+    As soon as the path planning is finished, the drones will take off and start their trajectories.
+    """
+
     rospy.init_node('roslaunch_sequencer')
+    print("Called roslaunch_sequencer!")
 
     rospy.Subscriber("/finished_planning", String, planning_finished_callback)
 
     try:
         launch.spin()
-        launch2.spin()
         launch3.spin()
     finally:
         # After Ctrl+C, stop all nodes from running
         launch.shutdown()
-        launch2.shutdown()
         launch3.shutdown()

@@ -85,7 +85,7 @@ class TrajectoryExecutor_Position_Controller:
             time.sleep(0.1)
 
     def receive_executor_trajectory(self, piece_pol):
-        print("Crazyflie with id:", executor_id, "received follower trajectory...")
+        print("FOLLOWER crazyflie with id:", executor_id, "received follower trajectory...")
         matrix = TrajectoryExecutor_Position_Controller.build_matrix_from_traj_msg(piece_pol)
 
         file_name = exec_pkg_path+"/resources/piecewise_pols/piecewise_pole_test_{}.csv".format(executor_id)
@@ -98,7 +98,7 @@ class TrajectoryExecutor_Position_Controller:
 
     def receive_leader_trajectory(self, piece_pol):
         # Receives the leader trajectory and initialize the trajectory matcher with it
-        print("Crazyflie with id:", leader_id, "received leader trajectory...")
+        print("FOLLOWER crazyflie with id:", leader_id, "received leader trajectory...")
         matrix = TrajectoryExecutor_Position_Controller.build_matrix_from_traj_msg(piece_pol)
         self.traj_matcher = trajectory_matcher_time_based(matrix)
 
@@ -112,12 +112,6 @@ class TrajectoryExecutor_Position_Controller:
         z = np.array(piece_pol.poly_z).reshape((lines, 8))
         yaw = np.array(piece_pol.poly_yaw).reshape((lines, 8))
         durations = np.array(piece_pol.durations).reshape((lines, 1))
-
-        print("x:", x.shape)
-        print("y:", y.shape)
-        print("z:", z.shape)
-        print("yaw:", yaw.shape)
-        print("durations:", durations.shape)
 
         # 8 coeffs per x,y,z,yaw + 1 for duration
         matrix = np.zeros((lines, 1+8*4))
@@ -315,6 +309,22 @@ def test_traj_matcher_general():
     executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, 0])
 
 
+def use_already_generated_trajectories():
+    leader_traj_file = rospy.get_param("/cf_leader_traj")
+    follower_traj_file = rospy.get_param("/cf_follower_traj")
+    print("FOLLOWER: leader_traj_file:", leader_traj_file)
+    print("FOLLOWER: follower_traj_file:", follower_traj_file)
+
+    # Load leader trajectory
+    leader_matrix = np.loadtxt(leader_traj_file, delimiter=",", skiprows=0, usecols=range(33))
+    executor_pos.traj_matcher = trajectory_matcher_time_based(leader_matrix)
+
+    # Load follower trajectory
+    follower_tr = uav_trajectory.Trajectory()
+    follower_tr.loadcsv(follower_traj_file, skip_first_row=False)
+    executor_pos.tr = follower_tr
+
+
 def planning_before_take_off():
     prefix_path = drone_path_planning_path+"/resources/trajectories/"
     leader_traj_file = prefix_path + "Pol_matrix_leader.csv"
@@ -342,12 +352,15 @@ def planning_before_take_off():
 
     executor_pos.wait_for_leader_sync()
     print("FOLLOWER:Received SYNC signal...")
+
+    use_already_generated_trajectories()  # TODO: remove this in real flight
+
     # Go to start position
-    pos = follower_tr.eval(0.0).pos
+    pos = executor_pos.tr.eval(0.0).pos
     print("Follower going to pose:", pos)
 
     offset = [0, 0, 0]
-    publish_traj_as_path(follower_tr, offset, path_pub)
+    publish_traj_as_path(executor_pos.tr, offset, path_pub)
     executor_pos.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=[0, 0, 0])
 
 

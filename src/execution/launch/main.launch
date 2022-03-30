@@ -8,11 +8,12 @@
 
 	<include file="$(find crazyflie_demo)/launch/crazyflie_2.launch"/>
 
-	<group  if="$(eval planning_time == 'live')">
+	<!-- <group  if="$(eval planning_time == 'live')">
 		<include file="$(find execution)/launch/live_formation.launch"/>
-  	</group>
+  	</group> -->
 	
-	<group  if="$(eval planning_time == 'before_take_off')">
+	<!-- <group  if="$(eval planning_time == 'before_take_off')"> -->
+	<group >
   		<node name="roslaunch_sequencer" pkg="execution" type="launch_sequence.py" output="screen" />
   	</group>
 

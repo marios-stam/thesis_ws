@@ -52,6 +52,9 @@ class TrajectoryExecutor_Position_Controller:
         self.leader_stabilized = False
         self.follower_stabilized = False
 
+        self.matrix = None
+        self.traj_started = False
+
     def odometry_callback(self, odom: Odometry):
         self.odom = odom
 
@@ -59,6 +62,12 @@ class TrajectoryExecutor_Position_Controller:
         print("Waiting for odom...")
         while self.odom == None:
             check_ctrl_c()
+
+    def wait_to_receive_traj_msg(self):
+        print("LEADER :Waiting for traj matrix...")
+        while type(self.matrix) == type(None):
+            check_ctrl_c()
+            rospy.sleep(0.1)
 
     # threshold propably needs tuning
     def wait_until_get_to_pose(self, x, y, z, yaw, threshold=0.4, timeout_threshold=np.inf):
@@ -85,7 +94,7 @@ class TrajectoryExecutor_Position_Controller:
             time.sleep(0.1)
 
     def receive_trajectory(self, piece_pol):
-        print("Crazyflie with id:", executor_id, "received trajectory...")
+        print("LEADER Crazyflie with id:", executor_id, "received trajectory...")
         cfid = piece_pol.cf_id
 
         lines = int(len(piece_pol.poly_x)/8)
@@ -98,11 +107,11 @@ class TrajectoryExecutor_Position_Controller:
         yaw = np.array(piece_pol.poly_yaw).reshape((lines, 8))
         durations = np.array(piece_pol.durations).reshape((lines, 1))
 
-        print("x:", x.shape)
-        print("y:", y.shape)
-        print("z:", z.shape)
-        print("yaw:", yaw.shape)
-        print("durations:", durations.shape)
+        # print("x:", x.shape)
+        # print("y:", y.shape)
+        # print("z:", z.shape)
+        # print("yaw:", yaw.shape)
+        # print("durations:", durations.shape)
 
         # 8 coeffs per x,y,z,yaw + 1 for duration
         matrix = np.zeros((lines, 1+8*4))
@@ -116,7 +125,7 @@ class TrajectoryExecutor_Position_Controller:
 
         # If both leader and follower are stabilized, start executing the trajectory
         # Otherwise, wait until both are stabilized and then do it
-        if self.leader_stabilized and self.follower_stabilized:
+        if self.leader_stabilized and self.follower_stabilized and not self.traj_started:
             self.execute_trajectory_testing_leader_follower(matrix, relative=False)
 
     def go_to_pose(self, x, y, z, yaw, offset=[0, 0, 0]):
@@ -302,6 +311,7 @@ class TrajectoryExecutor_Position_Controller:
 
     def publish_start_trajectory(self):
         start_traj_publisher.publish("Start")
+        self.traj_started = True
 
 
 def live_planning():
@@ -336,7 +346,6 @@ def live_planning():
     state = planning_state()
     state.x, state.y, state.z, state.yaw, state.drones_distance, state.drones_angle = rb_state
     start_planning_publisher.publish(state)
-    print("Published planning start state")
 
 
 def planning_before_take_off():
@@ -350,9 +359,22 @@ def planning_before_take_off():
     print("Leader waiting Folllower to stabilize...")
     executor_pos.wait_follower_to_stabilize()
 
+    executor_pos.wait_to_receive_traj_msg()
+    rospy.sleep(1)  # wait for the trajectory to be received from follower as well
+
+    use_already_generated_trajectories()  # TODO: remove this in real flight
+
     matrix = executor_pos.matrix
     executor_pos.execute_trajectory_testing_leader_follower(matrix, relative=False)
     executor_pos.land()
+
+
+def use_already_generated_trajectories():
+    # load trajectory file to test generated trajectories (THIS MUST BE REMOVED for real flight)
+    leader_traj_file = rospy.get_param("/cf_leader_traj")
+    print("LEADER: leader traj file:", leader_traj_file)
+    matrix = np.loadtxt(leader_traj_file, delimiter=",", skiprows=0, usecols=range(33))
+    executor_pos.matrix = matrix
 
 
 def test_leader_follower():

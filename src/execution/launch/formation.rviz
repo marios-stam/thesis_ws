@@ -99,14 +99,31 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        demo_crazyflie10/demo_crazyflie10:
+          Value: true
+        demo_crazyflie9/demo_crazyflie9:
+          Value: true
+        ompl:
+          Value: true
+        rigid_body:
+          Value: false
+        world:
+          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
-      Show Arrows: true
-      Show Axes: true
+      Show Arrows: false
+      Show Axes: false
       Show Names: true
       Tree:
-        {}
+        ompl:
+          world:
+            demo_crazyflie10/demo_crazyflie10:
+              {}
+            demo_crazyflie9/demo_crazyflie9:
+              {}
+            rigid_body:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -114,7 +131,7 @@ Visualization Manager:
       Axes Radius: 0.10000000149011612
       Class: rviz/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.10000000149011612
       Head Radius: 0.15000000596046448
       Name: Pose
@@ -124,13 +141,13 @@ Visualization Manager:
       Shape: Arrow
       Topic: /cf_leader/reference
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /meshes_array
       Name: MarkerArray
       Namespaces:
-        {}
+        cf: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -138,7 +155,7 @@ Visualization Manager:
       Marker Topic: /dronesMarkers_array
       Name: DroneMarkers
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -194,7 +211,7 @@ Visualization Manager:
       Marker Topic: /catenaries_array
       Name: Catenaries
       Namespaces:
-        {}
+        caten_0: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -310,4 +327,4 @@ Window Geometry:
     collapsed: false
   Width: 1848
   X: 72
-  Y: 421
+  Y: 27
