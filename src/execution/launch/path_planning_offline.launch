@@ -9,5 +9,5 @@
 	<!-- <node name="start_path_planner" pkg="execution" type="planner_start.py" output="screen"/> -->
 
 	<node name="path_planner" pkg="drone_path_planning" type="rigidBodyPath.py" output="screen"/>
-		
+	
 </launch>
