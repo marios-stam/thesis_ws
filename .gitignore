@@ -6,7 +6,7 @@ src/libviconstream
 src/ros_viconstream
 logs
 .catkin_tools
-bags
+
 
 *.pyc
 src/execution/scripts/hummingbird3.py

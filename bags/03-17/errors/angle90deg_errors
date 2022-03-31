@@ -1,0 +1,26 @@
+# 90 deg turn correcetd.bag
+
+[ERROR][1647526250.777098]: bad callback: < bound method TrajectoryExecutor_Position_Controller.receive_leader_pose of < __main__.TrajectoryExecutor_Position_Controller object at 0x7f16ba2da2b0>>
+Traceback(most recent call last):
+  File "/opt/ros/noetic/lib/python3/dist-packages/rospy/topics.py", line 750, in _invoke_callback
+    cb(msg)
+  File "/home/marios/thesis_ws/src/execution/scripts/follower_traj_executor_position_controller.py", line 248, in receive_leader_pose
+    t = self.traj_matcher.get_corresponding_t(
+  File "/home/marios/thesis_ws/src/execution/src/leader_follower/time_based.py", line 80, in get_corresponding_t
+    t=self.solve_i_pol_for_t(leader_pos, i)
+  File "/home/marios/thesis_ws/src/execution/src/leader_follower/time_based.py", line 63, in solve_i_pol_for_t
+    most_common_value=sorted(occurrences.items())[0][0]
+IndexError: list index out of range
+
+
+[ERROR][1647526250.825037]: bad callback: < bound method TrajectoryExecutor_Position_Controller.receive_leader_pose of < __main__.TrajectoryExecutor_Position_Controller object at 0x7f16ba2da2b0 >>
+Traceback(most recent call last):
+  File "/opt/ros/noetic/lib/python3/dist-packages/rospy/topics.py", line 750, in _invoke_callback
+    cb(msg)
+  File "/home/marios/thesis_ws/src/execution/scripts/follower_traj_executor_position_controller.py", line 248, in receive_leader_pose
+    t=self.traj_matcher.get_corresponding_t(
+  File "/home/marios/thesis_ws/src/execution/src/leader_follower/time_based.py", line 80, in get_corresponding_t
+    t=self.solve_i_pol_for_t(leader_pos, i)
+  File "/home/marios/thesis_ws/src/execution/src/leader_follower/time_based.py", line 23, in solve_i_pol_for_t
+    tmax=durations[i]
+IndexError: index 29 is out of bounds for axis 0 with size 29
