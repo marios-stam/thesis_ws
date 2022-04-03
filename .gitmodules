@@ -12,3 +12,6 @@
 [submodule "src/drones_control"]
 	path = src/drones_control
 	url = https://github.com/marios-stam/drones_control.git
+[submodule "src/drones_rope_planning"]
+	path = src/drones_rope_planning
+	url = https://github.com/marios-stam/drones_rope_planning.git
