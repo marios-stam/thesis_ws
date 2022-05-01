@@ -109,11 +109,13 @@ class Trajectory:
             print("Reshaping data to (1,33)")
             data = data.reshape(1, 33)
 
-        self.polynomials = [Polynomial4D(
-            row[0], row[1:9], row[9:17], row[17:25],
-            row[25:33]) for row in data]
+        self.polynomials = [Polynomial4D(row[0], row[1:9], row[9:17], row[17:25], row[25:33]) for row in data]
 
         self.duration = np.sum(data[:, 0])
+
+    def load_from_matrix(self, matrix):
+        self.polynomials = [Polynomial4D(row[0], row[1:9], row[9:17], row[17:25], row[25:33]) for row in matrix]
+        self.duration = np.sum(matrix[:, 0])
 
     def eval(self, t):
         assert t >= 0
