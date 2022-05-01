@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 from math import atan2
-from re import S
-
 from sympy import re
 import rospy
 from rospy.client import INFO
@@ -35,18 +33,31 @@ def handle_new_trajectory(piece_pol):
 
 
 class Drone_transform_updater:
+    RESET_DISTANCE_THRESHOLD = 2
+
     def __init__(self, id, dt):
         self.id = id
         self.tr: uav_trajectory.Trajectory = None
         self.t = 0
         self.new_traj_received = False
         self.dt = dt
-        self.prev_pos: list = None
 
-    def update_trajectory(self, tr):
+    def update_trajectory(self, tr: uav_trajectory.Trajectory):
+        first_pos = np.array(tr.eval(0).pos)
+
+        # If it is the first time it receives traj set prev_pos to init pos
+        if self.tr == None:
+            self.prev_pos = first_pos
+
+        # distance from current pos to first_pos of received trajectory
+        dist_from_curr_pos = np.linalg.norm(first_pos-self.prev_pos)
+        if (dist_from_curr_pos > self.RESET_DISTANCE_THRESHOLD):
+            print("opa teliosame")
+            self.prev_pos = first_pos
+
         self.tr = tr
-        self.new_traj_received = True
-        self.t = 0.2
+        self.first_tr_received = True
+        self.t = 0.6
 
     def update_time(self):
         if self.tr == None:
@@ -55,7 +66,7 @@ class Drone_transform_updater:
 
         self.t += self.dt
         if self.t >= self.tr.duration:
-            self.t = 0
+            self.t = self.tr.duration
 
     def tick(self):
         if self.tr == None:
@@ -64,10 +75,20 @@ class Drone_transform_updater:
 
         self.update_time()
 
-        pos = self.tr.eval(self.t).pos
+        pos = np.array(self.tr.eval(self.t).pos)
+
+        delta_pos = pos-self.prev_pos
+
+        MAX_DELTA = 0.5
+        delta_mag = np.linalg.norm(delta_pos)
+        delta_pos = delta_pos if delta_mag < MAX_DELTA else delta_pos/delta_mag*MAX_DELTA
+
+        pos = self.prev_pos + dt*delta_pos
+
         # publish transform
         print("Publishing transform for drone {} wits pos {}".format(self.id+1, pos))
         br.sendTransform(pos, [0, 0, 0, 1], rospy.Time.now(), "drone"+str(self.id+1), "world")
+        self.prev_pos = pos
 
     def pol_traj_callback(self, piece_pol):
         if piece_pol.cf_id == self.id:
@@ -107,14 +128,15 @@ if __name__ == "__main__":
     br = tf.TransformBroadcaster()
 
     pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
+    f = 50
+    dt = 1/f*1.3
 
-    dt = 0.1
     drone1 = Drone_transform_updater(id=0, dt=dt)
     drone2 = Drone_transform_updater(id=1, dt=dt)
 
     rospy.Subscriber('/piece_pol', TrajectoryPolynomialPieceMarios, handle_new_trajectory)
 
-    rate = rospy.Rate(30)
+    rate = rospy.Rate(f)
     while not rospy.is_shutdown():
 
         drone1.tick()
