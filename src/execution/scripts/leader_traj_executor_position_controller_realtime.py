@@ -44,7 +44,7 @@ class Drone_transform_updater:
 
     def update_trajectory(self, tr: uav_trajectory.Trajectory):
         first_pos = np.array(tr.eval(0).pos)
-
+        print("First velocity: {}".format(tr.eval(0).vel))
         # If it is the first time it receives traj set prev_pos to init pos
         if self.tr == None:
             self.prev_pos = first_pos
@@ -79,14 +79,18 @@ class Drone_transform_updater:
 
         delta_pos = pos-self.prev_pos
 
-        MAX_DELTA = 0.5
+        MAX_DELTA = 0.8
         delta_mag = np.linalg.norm(delta_pos)
+        if delta_mag > MAX_DELTA:
+            # print("Delta mag is too big: {}".format(delta_mag))
+            pass
+
         delta_pos = delta_pos if delta_mag < MAX_DELTA else delta_pos/delta_mag*MAX_DELTA
 
         pos = self.prev_pos + dt*delta_pos
 
         # publish transform
-        print("Publishing transform for drone {} wits pos {}".format(self.id+1, pos))
+        # print("Publishing transform for drone {} wits pos {}".format(self.id+1, pos))
         br.sendTransform(pos, [0, 0, 0, 1], rospy.Time.now(), "drone"+str(self.id+1), "world")
         self.prev_pos = pos
 
