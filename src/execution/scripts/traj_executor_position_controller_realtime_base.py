@@ -20,7 +20,6 @@ import time
 import tf
 import uav_trajectory
 import sys
-from traj_executor_position_controller_realtime_base import TrajectoryExecutor_Position_Controller_Realtime_Base
 
 import rospkg
 # get an instance of RosPack with the default search paths
@@ -28,54 +27,26 @@ rospack = rospkg.RosPack()
 exec_pkg_path = rospack.get_path('execution')
 
 
-class TrajectoryExecutor_Position_Controller_Leader(TrajectoryExecutor_Position_Controller_Realtime_Base):
-    def __init__(self, cf_id: int, waypoints_freq: float) -> None:
-        super().__init__(cf_id, waypoints_freq)
-
-        self.follower_stabilized_pos = None
-        self.follower_stabilized = False
-
-    def follower_land(self):
-        print("Follower landing...")
-        # Land string is not necessary, but it is nice to have
-        follower_safety_land_publisher.publish("Land")
-
-    def wait_follower_to_stabilize(self):
-        rate = rospy.Rate(20)
-        while self.follower_stabilized_pos == None:
-            check_ctrl_c()
-            rate.sleep()
-
-    def follower_stabilized_callback(self, msg: PoseStamped):
-        # Follower is stabilized and then sends its position to the leader
-        self.follower_stabilized_pos = [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
-        print("Follower stabilized at position:", self.follower_stabilized_pos)
-        self.follower_stabilized = True
-
-    def publish_sync_signal(self):
-        sync_pub.publish(True)
-
-    def land_all(self):
-        self.land()
-        self.follower_land()
-
-
-class TrajectoryExecutor_Position_Controller:
+class TrajectoryExecutor_Position_Controller_Realtime_Base:
     def __init__(self, cf_id: int, waypoints_freq: float) -> None:
         self.cf_id = cf_id
         self.wps_freq = waypoints_freq
         self.dt = 1/self.wps_freq
 
         # Initialize to None to indicate that they haven't been received yet
-        self.t = None
+        self.t: float = None
+        self.tr: uav_trajectory.Trajectory = None
 
-        self.odom = None
-        self.follower_stabilized_pos = None
+        self.odom: PoseStamped = None
 
-        self.leader_stabilized = False
-        self.follower_stabilized = False
+        self.stabilized: bool = False
 
-        self.tr = None
+        self.load_publishers()
+
+    def load_publishers(self):
+        self.safety_land_publisher = rospy.Publisher('safety_land', String, queue_size=10)
+        self.pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
+        self.stabilized_pos_pub = rospy.Publisher('stabilized', PoseStamped, queue_size=10)
 
     def odometry_callback(self, odom: Odometry):
         self.odom = odom
@@ -87,7 +58,7 @@ class TrajectoryExecutor_Position_Controller:
 
     def wait_to_receive_traj_msg(self):
         print("LEADER :Waiting for traj matrix...")
-        while type(self.matrix) == type(None):
+        while type(self.tr) == type(None):
             check_ctrl_c()
             rospy.sleep(0.1)
 
@@ -131,16 +102,23 @@ class TrajectoryExecutor_Position_Controller:
         self.wait_until_get_to_pose(
             x, y, height, 0, threshold=0.05, timeout_threshold=4)
 
+    def go_to_pose(self, x, y, z, yaw, offset=[0, 0, 0]):
+        p = PoseStamped()
+        p.header.stamp = rospy.Time.now()
+
+        x, y, z = x+offset[0], y+offset[1], z+offset[2]  # adding offset
+        p.pose.position.x, p.pose.position.y, p.pose.position.z = x, y, z
+
+        q = tf.transformations.quaternion_from_euler(0, 0, yaw)
+        p.pose.orientation.x, p.pose.orientation.y, p.pose.orientation.z, p.pose.orientation.w = q[
+            0], q[1], q[2], q[3]
+
+        self.pos_pub.publish(p)
+
     def land(self):
         print("Landing...")
         # Land string is not necessary, but it is nice to have
-        safety_land_publisher.publish("Land")
-        follower_safety_land_publisher.publish("Land")
-
-    def follower_land(self):
-        print("Follower landing...")
-        # Land string is not necessary, but it is nice to have
-        follower_safety_land_publisher.publish("Land")
+        self.safety_land_publisher.publish("Land")
 
     def wait_to_stabilize(self, vel_thershold=0.02):
         # wait until the drone is stabilized (velocity magnitude below threshold)
@@ -160,21 +138,6 @@ class TrajectoryExecutor_Position_Controller:
             rate.sleep()
 
         self.leader_stabilized = True
-
-    def wait_follower_to_stabilize(self):
-        rate = rospy.Rate(20)
-        while self.follower_stabilized_pos == None:
-            check_ctrl_c()
-            rate.sleep()
-
-    def follower_stabilized_callback(self, msg: PoseStamped):
-        # Follower is stabilized and then sends its position to the leader
-        self.follower_stabilized_pos = [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
-        print("Follower stabilized at position:", self.follower_stabilized_pos)
-        self.follower_stabilized = True
-
-    def publish_sync_signal(self):
-        sync_pub.publish(True)
 
     def update_time(self):
         if self.t == None:
@@ -199,11 +162,24 @@ class TrajectoryExecutor_Position_Controller:
         pose.pose.orientation = Quaternion(0, 0, 0, 1)
 
         # publish pose
-        pos_pub.publish(pose)
+        self.pos_pub.publish(pose)
 
-    def land_all(self):
-        self.land()
-        self.follower_land()
+    def go_to_traj_start_pos(self, offset=[0, 0, 0]):
+        # Go to start position
+        if self.tr == None:
+            rospy.logerr("No trajectory received yet")
+            sys.exit()
+
+        pos = self.tr.eval(0.0).pos
+        print("Follower going to pose: {} with offset: {}".format(pos, offset))
+
+        self.go_to_pose(pos[0], pos[1], pos[2], yaw=0, offset=offset)
+
+    def wait_controller_to_connect(self):
+        print("Waiting to connect to reference topic..")
+        while self.pos_pub.get_num_connections() < 1:
+            if rospy.is_shutdown():
+                sys.exit()
 
 
 def piece_pol_to_traj(piece_pol: TrajectoryPolynomialPieceMarios) -> uav_trajectory.Trajectory:
@@ -229,52 +205,3 @@ def piece_pol_to_traj(piece_pol: TrajectoryPolynomialPieceMarios) -> uav_traject
     tr.load_from_matrix(matrix)
 
     return tr
-
-
-def init_flight():
-    print("Waiting for odometry")
-    executor_pos.wait_for_odometry()
-
-    print("Leader waiting to stabilize...")
-    executor_pos.wait_to_stabilize(vel_thershold=0.02)
-    print("Leader waiting Folllower to stabilize...")
-    executor_pos.wait_follower_to_stabilize()
-
-    print("Leader ready to fly!")
-
-
-if __name__ == "__main__":
-    rospy.init_node("Traj_Executor_Position_Controller", anonymous=True)
-    # rospy.sleep(5)
-
-    br = tf.TransformBroadcaster()
-
-    waypoints_freq = rospy.get_param("/waypoints_freq")  # TODO:implement this in the launch file
-
-    # get command line arguments
-    cf_name = str(sys.argv[1])
-    executor_id = get_executor_id(cf_name)
-
-    print("Executor postion controller with id:", executor_id)
-
-    # ====================== Publishers ======================
-    follower_safety_land_publisher = rospy.Publisher('/cf_follower/safety_land', String, queue_size=10)
-    sync_pub = rospy.Publisher('sync', Bool, queue_size=10)
-
-    leader = TrajectoryExecutor_Position_Controller(id=0, waypoints_freq=f)  # Leader's id is 0
-
-    # ====================== Subcribers ======================
-    odometry_sub = rospy.Subscriber('/pixy/vicon/{}/{}/odom'.format(cf_name, cf_name), Odometry, leader.odometry_callback)
-    follower_stab = rospy.Subscriber('/cf_follower/stabilized', PoseStamped, leader.follower_stabilized_callback)
-    land_all_sub = rospy.Subscriber('/land_all', String, leader.land_all)  # TODO:implement land_all to the planning side
-
-    init_flight()
-
-    rate = rospy.Rate(waypoints_freq)
-    while not rospy.is_shutdown():
-
-        leader.tick()
-
-        rate.sleep()
-
-    rospy.spin()
