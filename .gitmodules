@@ -12,6 +12,13 @@
 [submodule "src/drones_control"]
 	path = src/drones_control
 	url = https://github.com/marios-stam/drones_control.git
+	
 [submodule "src/drones_rope_planning"]
 	path = src/drones_rope_planning
 	url = https://github.com/marios-stam/drones_rope_planning.git
+[submodule "src/libviconstream"]
+	path = src/libviconstream
+	url = https://github.com/LTU-RAI/libviconstream.git
+[submodule "src/ros_viconstream"]
+	path = src/ros_viconstream
+	url = https://github.com/LTU-RAI/ros_viconstream.git

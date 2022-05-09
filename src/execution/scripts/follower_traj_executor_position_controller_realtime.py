@@ -23,7 +23,7 @@ import uav_trajectory
 import sys
 
 from leader_follower import trajectory_matcher_time_based
-from traj_executor_position_controller_realtime_base import TrajectoryExecutor_Position_Controller_Realtime_Base
+from traj_executor_position_controller_realtime_base import TrajectoryExecutor_Position_Controller_Realtime_Base, beep
 
 import rospkg
 # get an instance of RosPack with the default search paths
@@ -90,6 +90,13 @@ class TrajectoryExecutor_Position_Controller_Follower(TrajectoryExecutor_Positio
         self.leader_synced = msg.data
 
 
+def follower_traj_callback(piece_pol: TrajectoryPolynomialPieceMarios):
+
+    if piece_pol.cf_id == 1:
+        print("FOLLOWER:Received trajectory...")
+        follower.receive_trajectory(piece_pol)
+
+
 def init_flight():
     print("FOLLOWER:Waiting for odometry...")
     follower.wait_for_odometry()
@@ -100,8 +107,11 @@ def init_flight():
     print("FOLLOWER:Waiting to stabilize...")
     follower.wait_to_stabilize()
 
+    print("FOLLOWER:Publishing stabilized pose...")
+    follower.publish_stabilized()
+
+    print("FOLLOWER:Waiting to receive SYNC signal...")
     follower.wait_for_leader_sync()
-    print("FOLLOWER:Received SYNC signal...")
 
 
 if __name__ == "__main__":
@@ -124,24 +134,25 @@ if __name__ == "__main__":
     # ====================== Publishers ======================
 
     # ====================== Subcribers ======================
-    odom_topic = '/pixy/vicon/demo_crazyflie{}/demo_crazyflie{}/odom'.format(executor_id, executor_id)
+    odom_topic = '/pixy/vicon/{}/{}/odom'.format(cf_name, cf_name)
     print("odom_topic:", odom_topic)
     odometry_sub = rospy.Subscriber(odom_topic, Odometry, follower.odometry_callback)
 
     start_traj_sub = rospy.Subscriber('/cf_leader/start_trajectory', String, follower.leader_started_trajectory)
-    leader_sub = rospy.Subscriber('/cf_leader/reference', PoseStamped, follower.receive_leader_pose)
+    # leader_sub = rospy.Subscriber('/cf_leader/reference', PoseStamped, follower.receive_leader_pose)
 
-    # Subscribe to trajectory topic and then execute it after going to the first waypoint
-    rospy.Subscriber('/piece_pol', TrajectoryPolynomialPieceMarios, follower.receive_trajectory)
+    rospy.Subscriber('/piece_pol', TrajectoryPolynomialPieceMarios, follower_traj_callback)
 
     sync_sub = rospy.Subscriber('/cf_leader/sync', Bool, follower.leader_sync_callback)
 
     init_flight()
     print("FOLLOWER:Ready to fly!")
+    beep()
 
     rate = rospy.Rate(waypoints_freq)
     while not rospy.is_shutdown():
 
+        print("FOLLOWER:", end=" ")
         follower.tick()
 
         rate.sleep()

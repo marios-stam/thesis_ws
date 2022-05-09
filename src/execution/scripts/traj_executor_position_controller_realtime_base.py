@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 from math import atan2
+from traceback import print_tb
 from sympy import re
 import rospy
 from rospy.client import INFO
 import numpy as np
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
+from geometry_msgs.msg import PoseStamped, Point, Quaternion, PoseWithCovariance
 import simpleaudio
 from nav_msgs.msg import Path
 from common_functions import publish_traj_as_path, check_ctrl_c, get_executor_id
@@ -31,13 +32,13 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
     def __init__(self, cf_id: int, waypoints_freq: float) -> None:
         self.cf_id = cf_id
         self.wps_freq = waypoints_freq
-        self.dt = 1/self.wps_freq
+        self.dt = 1/self.wps_freq*12
 
         # Initialize to None to indicate that they haven't been received yet
         self.t: float = None
         self.tr: uav_trajectory.Trajectory = None
 
-        self.odom: PoseStamped = None
+        self.odom: PoseWithCovariance = None
 
         self.stabilized: bool = False
 
@@ -47,6 +48,17 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
         self.safety_land_publisher = rospy.Publisher('safety_land', String, queue_size=10)
         self.pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
         self.stabilized_pos_pub = rospy.Publisher('stabilized', PoseStamped, queue_size=10)
+
+    def publish_stabilized(self):
+        if self.stabilized:
+            pose = PoseStamped()
+            pose.header.stamp = rospy.Time.now()
+            pose.pose.position = self.odom.pose.pose.position
+            pose.pose.orientation = self.odom.pose.pose.orientation
+
+            self.stabilized_pos_pub.publish(pose)
+        else:
+            rospy.logerr("No stabilized pose yet")
 
     def odometry_callback(self, odom: Odometry):
         self.odom = odom
@@ -88,7 +100,7 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
 
     def receive_trajectory(self, piece_pol):
         self.tr = piece_pol_to_traj(piece_pol)
-        self.t = 0  # reset time in order to start from the beginning of the trajectory
+        self.t = 0.5  # reset time in order to start from the beginning of the trajectory
 
     def take_off(self, height=1):
         if self.odom == None:
@@ -137,7 +149,7 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
             stabilized = all(abs(vel) < vel_thershold for vel in velocities)
             rate.sleep()
 
-        self.leader_stabilized = True
+        self.stabilized = True
 
     def update_time(self):
         if self.t == None:
@@ -155,6 +167,9 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
         self.update_time()
 
         pos = np.array(self.tr.eval(self.t).pos)
+        vel = np.array(self.tr.eval(self.t).vel)
+
+        print("t:{} going to pos with vel{} --> {}".format(self.t, pos, vel))
 
         # create pose to publish
         pose = PoseStamped()
@@ -205,3 +220,10 @@ def piece_pol_to_traj(piece_pol: TrajectoryPolynomialPieceMarios) -> uav_traject
     tr.load_from_matrix(matrix)
 
     return tr
+
+
+def beep():
+    wave_obj = simpleaudio.WaveObject.from_wave_file(
+        "/home/marios/thesis_ws/src/execution/resources/beep.wav")
+    play_obj = wave_obj.play()
+    play_obj.wait_done()
