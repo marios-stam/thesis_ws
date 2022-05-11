@@ -8,7 +8,19 @@ from visualization_msgs.msg import Marker, MarkerArray
 from math import pi
 import tf
 
-DRONES_NUMBER = 5
+DRONES_NUMBER = 2
+
+
+def get_executor_id(cf_name):
+    # get id after prefix
+    try:
+        common_prefix = "demo_crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+    except:
+        common_prefix = "crazyflie"
+        executor_id = int(cf_name[len(common_prefix):])
+
+    return executor_id
 
 
 class DroneMarker(Marker):
@@ -59,9 +71,10 @@ class DroneMarkersArray(MarkerArray):
         self.id_index_dict = {}
 
     def update(self, id, trans, rot):
+
         if id not in self.id_index_dict.keys():
             print(id, "not in ", self.id_index_dict.keys())
-            self.id_index_dict[id] = id-1
+            self.id_index_dict[id] = len(self.id_index_dict.keys())
             self.markers.append(DroneMarker(id, trans, rot))
         else:
 
@@ -80,13 +93,36 @@ if __name__ == "__main__":
         'dronesMarkers_array',  MarkerArray, queue_size=10)
 
     drones = DroneMarkersArray()
-    topic_template = "/drone"
+    topic_templates = []
+
+    for i in range(DRONES_NUMBER):
+        topic_template = "/drone"
+        topic_templates.append(topic_template + str(id))
+
+    try:
+        # This code works in case of online planning
+        leader_cf_name = rospy.get_param("/cf_follower_name")
+        follower_cf_name = rospy.get_param("/cf_leader_name")
+
+        # get id after prefix
+        leader_id = get_executor_id(leader_cf_name)
+        follower_id = get_executor_id(follower_cf_name)
+
+        # drones positions subscriber
+        leader_top = 'demo_crazyflie{}/demo_crazyflie{}'.format(leader_id, leader_id)
+        follower_top = 'demo_crazyflie{}/demo_crazyflie{}'.format(follower_id, follower_id)
+
+        topic_templates.append(leader_top)
+        topic_templates.append(follower_top)
+
+    except:
+        rospy.logerr("No online planning")
+
     while not rospy.is_shutdown():
 
-        for id in range(DRONES_NUMBER):
+        for id, topic in enumerate(topic_templates):
             try:
-                (trans, rot) = listener.lookupTransform(
-                    '/world', topic_template + str(id), rospy.Time(0))
+                (trans, rot) = listener.lookupTransform('/world', topic, rospy.Time(0))
 
                 drones.update(id, trans, rot)
 

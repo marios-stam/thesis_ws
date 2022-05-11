@@ -207,6 +207,9 @@ install(PROGRAMS
   
   scripts/hummingbird3.py
   scripts/open_gen.py
+
+  scripts/traj_visualization.py
+
   
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
