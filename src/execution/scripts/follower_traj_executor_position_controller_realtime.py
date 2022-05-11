@@ -23,7 +23,7 @@ import uav_trajectory
 import sys
 
 from leader_follower import trajectory_matcher_time_based
-from traj_executor_position_controller_realtime_base import TrajectoryExecutor_Position_Controller_Realtime_Base, beep
+from traj_executor_position_controller_realtime_base import TrajectoryExecutor_Position_Controller_Realtime_Base, beep, build_matrix_from_traj_msg
 
 import rospkg
 # get an instance of RosPack with the default search paths
@@ -39,18 +39,18 @@ class TrajectoryExecutor_Position_Controller_Follower(TrajectoryExecutor_Positio
         # Follower specific code
         self.leader_started_trajectory_flag = False
         self.leader_synced = False
-        self.traj_matcher = None
+
+        self.traj_matcher = trajectory_matcher_time_based()
 
     def receive_leader_trajectory(self, piece_pol):
         # Receives the leader trajectory and initialize the trajectory matcher with it
         print("FOLLOWER crazyflie with id:", leader_id, "received leader trajectory...")
-        matrix = TrajectoryExecutor_Position_Controller.build_matrix_from_traj_msg(piece_pol)
-        self.traj_matcher = trajectory_matcher_time_based(matrix)
+        matrix = build_matrix_from_traj_msg(piece_pol)
+        self.traj_matcher.update_matrix(matrix)
 
     def receive_leader_pose(self, msg):
-        if self.leader_started_trajectory_flag == False:
-            # Leader has not started the trajectory yet
-            print("Leader has not started the trajectory yet")
+        if self.leader_synced == False:
+            print("Leader has not been synced yet")
             return 0
 
         if self.traj_matcher == None or self.tr == None:
@@ -91,9 +91,11 @@ class TrajectoryExecutor_Position_Controller_Follower(TrajectoryExecutor_Positio
 
 
 def follower_traj_callback(piece_pol: TrajectoryPolynomialPieceMarios):
-
-    if piece_pol.cf_id == 1:
-        print("FOLLOWER:Received trajectory...")
+    if piece_pol.cf_id == 0:
+        print("FOLLOWER:Received leader trajectory")
+        follower.receive_leader_trajectory(piece_pol)
+    elif piece_pol.cf_id == 1:
+        print("FOLLOWER:Received follower trajectory...")
         follower.receive_trajectory(piece_pol)
 
 
@@ -139,7 +141,6 @@ if __name__ == "__main__":
     odometry_sub = rospy.Subscriber(odom_topic, Odometry, follower.odometry_callback)
 
     start_traj_sub = rospy.Subscriber('/cf_leader/start_trajectory', String, follower.leader_started_trajectory)
-    # leader_sub = rospy.Subscriber('/cf_leader/reference', PoseStamped, follower.receive_leader_pose)
 
     rospy.Subscriber('/piece_pol', TrajectoryPolynomialPieceMarios, follower_traj_callback)
 
@@ -149,12 +150,28 @@ if __name__ == "__main__":
     print("FOLLOWER:Ready to fly!")
     beep()
 
-    rate = rospy.Rate(waypoints_freq)
-    while not rospy.is_shutdown():
+    USE_TRAJ_MATCHER = True
 
-        print("FOLLOWER:", end=" ")
-        follower.tick()
+    if USE_TRAJ_MATCHER:
+        # Get both  trajectories of leader and follower and set new position of follower based on the one
+        # of the leader in order to be synced
+        # Process:
+        #       -->get_leader_traj
+        #       -->read leader desired_pos
+        #       -->calculate corresponding t
+        #       -->calculate follower desired_pos basd on the t
+        #       -->publish follower desired_pos
 
-        rate.sleep()
+        leader_sub = rospy.Subscriber('/cf_leader/reference', PoseStamped, follower.receive_leader_pose)
 
-    rospy.spin()
+        rospy.spin()
+
+    else:
+
+        rate = rospy.Rate(waypoints_freq)
+        while not rospy.is_shutdown():
+
+            print("FOLLOWER:", end=" ")
+            follower.tick()
+
+            rate.sleep()

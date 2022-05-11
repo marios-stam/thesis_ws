@@ -197,6 +197,29 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
                 sys.exit()
 
 
+def build_matrix_from_traj_msg(piece_pol):
+    lines = int(len(piece_pol.poly_x)/8)
+
+    print(len(piece_pol.poly_x))
+
+    x = np.array(piece_pol.poly_x).reshape((lines, 8))
+    y = np.array(piece_pol.poly_y).reshape((lines, 8))
+    z = np.array(piece_pol.poly_z).reshape((lines, 8))
+    yaw = np.zeros((lines, 8))
+
+    durations = np.array(piece_pol.durations).reshape((lines, 1))
+
+    # 8 coeffs per x,y,z,yaw + 1 for duration
+    matrix = np.zeros((lines, 1+8*4))
+    matrix[:, 0] = durations.flatten()
+    matrix[:, 1:9] = x
+    matrix[:, 9:17] = y
+    matrix[:, 17:25] = z
+    matrix[:, 25:33] = yaw
+
+    return matrix
+
+
 def piece_pol_to_traj(piece_pol: TrajectoryPolynomialPieceMarios) -> uav_trajectory.Trajectory:
     t0 = rospy.Time.now()
     cfid = piece_pol.cf_id

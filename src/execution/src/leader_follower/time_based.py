@@ -6,14 +6,17 @@ from sympy import real_roots
 
 
 class trajectory_matcher_time_based:
-    def __init__(self, matrix):
+    def __init__(self, matrix=None):
         # matrix is the matrix of the trajectory of the leader
+        if matrix is not None:
+            self.update_matrix(matrix)
+
+    def update_matrix(self, matrix):
         self.durations = matrix[:, 0]
         self.xs = matrix[:, 1:9]
         self.ys = matrix[:, 9:17]
         self.zs = matrix[:, 17:25]
         self.yaws = matrix[:, 25:33][::-1]
-
         self.prev_index = 0
 
     def solve_i_pol_for_t(self, leader_pos, i):
