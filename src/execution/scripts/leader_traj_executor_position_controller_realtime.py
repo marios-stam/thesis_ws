@@ -29,8 +29,8 @@ exec_pkg_path = rospack.get_path('execution')
 
 
 class TrajectoryExecutor_Position_Controller_Leader(TrajectoryExecutor_Position_Controller_Realtime_Base):
-    def __init__(self, cf_id: int, waypoints_freq: float) -> None:
-        super().__init__(cf_id, waypoints_freq)
+    def __init__(self, cf_id: int, waypoints_freq: float, new_ref_dist_threshold: float) -> None:
+        super().__init__(cf_id, waypoints_freq, new_ref_dist_threshold)
 
         self.follower_stabilized_pos = None
         self.follower_stabilized = False
@@ -100,7 +100,7 @@ def init_flight():
     leader.wait_controller_to_connect()
 
     print("LEADER:Waiting to stabilize...")
-    leader.wait_to_stabilize(vel_thershold=0.02)
+    leader.wait_to_stabilize(vel_thershold=0.04)
 
     print("LEADER:Waiting Folllower to stabilize...")
     leader.wait_follower_to_stabilize()
@@ -124,8 +124,10 @@ if __name__ == "__main__":
     print("Executor postion controller with id:", executor_id)
 
     waypoints_freq = rospy.get_param("/waypoints_freq")
+    new_ref_dist_threshold = rospy.get_param("/new_ref_dist_threshold")
 
-    leader = TrajectoryExecutor_Position_Controller_Leader(cf_id=0, waypoints_freq=waypoints_freq)  # Leader's id is 0
+    leader = TrajectoryExecutor_Position_Controller_Leader(
+        cf_id=0, waypoints_freq=waypoints_freq, new_ref_dist_threshold=new_ref_dist_threshold)  # Leader's id is 0
 
     # ====================== Publishers ======================
     follower_safety_land_publisher = rospy.Publisher('/cf_follower/safety_land', String, queue_size=10)

@@ -195,7 +195,7 @@ class TrajectoryExecutor_Position_Controller:
         print("Leader started the trajectory")
         self.leader_started_trajectory_flag = True
 
-    def wait_to_stabilize(self, vel_thershold=0.02):
+    def wait_to_stabilize(self, vel_thershold=0.04):
         # wait until the drone is stabilized (velocity magnitude below threshold)
 
         stabilized = False

@@ -11,7 +11,7 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker, MarkerArray
 from matplotlib import pyplot as plt
 
-POINTS_PER_TRAJ = 50
+POINTS_PER_TRAJ = 20
 SHOW_GRAPHS = 0
 
 

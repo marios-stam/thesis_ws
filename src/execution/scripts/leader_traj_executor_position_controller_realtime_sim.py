@@ -73,7 +73,8 @@ class Drone_transform_updater:
             print("No trajectory received yet...")
             return
 
-        self.update_time()
+        # self.update_time()
+        self.update_time_improved()
 
         pos = np.array(self.tr.eval(self.t).pos)
 
@@ -98,6 +99,51 @@ class Drone_transform_updater:
         if piece_pol.cf_id == self.id:
             tr = receive_trajectory(piece_pol)
             self.update_trajectory(tr)
+
+    def update_time_improved(self):
+        if self.tr == None:
+            raise Exception("No trajectory received yet because t=None!")
+
+        curr_pos = self.prev_pos
+        self.t = self.get_time_from_position(curr_pos)
+
+        pos = self.tr.eval(self.t).pos
+        dist = np.linalg.norm(curr_pos-pos)
+        while (dist < 0.4):
+
+            if self.t + 0.1 >= self.tr.duration:
+                self.t = self.tr.duration
+                break
+            else:
+                self.t += 0.1
+
+            pos = self.tr.eval(self.t).pos
+            dist = np.linalg.norm(curr_pos-pos)
+
+    def get_time_from_position(self, pos: list):
+        """
+        input: pos: position that want to get time of  [x,y,z]
+        Returns the time corresponding to the position in the trajectory
+        """
+        if self.tr == None:
+            raise Exception("No trajectory received yet")
+
+        number_of_time_intervals = 20
+        dt = self.tr.duration/number_of_time_intervals
+
+        t_min = 0
+        min_dist = np.inf
+        for i in range(number_of_time_intervals):
+            t = i*dt
+            if t > self.tr.duration:
+                t = self.tr.duration
+
+            dist = np.linalg.norm(pos-self.tr.eval(t).pos)
+            if dist < min_dist:
+                min_dist = dist
+                t_min = t
+
+        return t_min
 
 
 def receive_trajectory(piece_pol):

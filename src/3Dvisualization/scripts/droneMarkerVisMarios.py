@@ -11,16 +11,18 @@ import tf
 DRONES_NUMBER = 2
 
 
-def get_executor_id(cf_name):
+def get_executor_topic(cf_name):
     # get id after prefix
     try:
         common_prefix = "demo_crazyflie"
         executor_id = int(cf_name[len(common_prefix):])
+        top = 'demo_crazyflie{}/demo_crazyflie{}'.format(executor_id, executor_id)
     except:
         common_prefix = "crazyflie"
         executor_id = int(cf_name[len(common_prefix):])
+        top = 'crazyflie{}/crazyflie{}'.format(executor_id, executor_id)
 
-    return executor_id
+    return top
 
 
 class DroneMarker(Marker):
@@ -104,13 +106,9 @@ if __name__ == "__main__":
         leader_cf_name = rospy.get_param("/cf_follower_name")
         follower_cf_name = rospy.get_param("/cf_leader_name")
 
-        # get id after prefix
-        leader_id = get_executor_id(leader_cf_name)
-        follower_id = get_executor_id(follower_cf_name)
-
-        # drones positions subscriber
-        leader_top = 'demo_crazyflie{}/demo_crazyflie{}'.format(leader_id, leader_id)
-        follower_top = 'demo_crazyflie{}/demo_crazyflie{}'.format(follower_id, follower_id)
+        # get leader-follower topics
+        leader_top = get_executor_topic(leader_cf_name)
+        follower_top = get_executor_topic(follower_cf_name)
 
         topic_templates.append(leader_top)
         topic_templates.append(follower_top)

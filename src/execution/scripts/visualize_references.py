@@ -37,8 +37,8 @@ if __name__ == "__main__":
     rospy.init_node("references_vis")
     print("started")
 
-    leader_topic = "/cf_leader/ref"
-    follower_topic = "/cf_follower/ref"
+    leader_topic = "/cf_leader/reference"
+    follower_topic = "/cf_follower/reference"
 
     rospy.Subscriber(leader_topic, PoseStamped, leader_callback)
     rospy.Subscriber(follower_topic, PoseStamped, follower_callback)

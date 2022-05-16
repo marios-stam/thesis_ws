@@ -29,10 +29,19 @@ exec_pkg_path = rospack.get_path('execution')
 
 
 class TrajectoryExecutor_Position_Controller_Realtime_Base:
-    def __init__(self, cf_id: int, waypoints_freq: float) -> None:
+    def __init__(self, cf_id: int, waypoints_freq: float, new_ref_dist_threshold: float = None) -> None:
+        """
+            inputs: 
+                cf_id: int
+                waypoints_freq: float The frequency where the waypoints are published
+                new_ref_dist_threshold: float The threshold for the distance between the current position and the reference position(alaways greater)
+
+        """
         self.cf_id = cf_id
         self.wps_freq = waypoints_freq
         self.dt = 1/self.wps_freq*12
+
+        self.new_ref_dist_threshold = new_ref_dist_threshold
 
         # Initialize to None to indicate that they haven't been received yet
         self.t: float = None
@@ -100,7 +109,14 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
 
     def receive_trajectory(self, piece_pol):
         self.tr = piece_pol_to_traj(piece_pol)
-        self.t = 0.5  # reset time in order to start from the beginning of the trajectory
+        self.t
+
+        # curr_pos = [self.odom.pose.pose.position.x, self.odom.pose.pose.position.y, self.odom.pose.pose.position.z]
+        # self.t = self.get_time_from_position(curr_pos)  # reset time in order to start from the beginning of the trajectory
+#
+        # time_step = 0.2
+        # print("Received trajectory and drone at  t:{} --> t_new:{}".format(self.t, self.t + time_step))
+        # self.t = min([self.tr.duration, self.t+time_step])
 
     def take_off(self, height=1):
         if self.odom == None:
@@ -138,7 +154,7 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
         altitude = 0
         rate = rospy.Rate(20)
 
-        while (not stabilized) or (altitude < 0.3):
+        while (not stabilized) or (altitude < 0.5):
             check_ctrl_c()
             # get velocities
             velocities = [self.odom.twist.twist.linear.x,
@@ -152,12 +168,49 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
         self.stabilized = True
 
     def update_time(self):
-        if self.t == None:
+        if self.tr == None:
             raise Exception("No trajectory received yet because t=None!")
 
-        self.t += self.dt
-        if self.t >= self.tr.duration:
-            self.t = self.tr.duration
+        curr_pos = np.array([self.odom.pose.pose.position.x, self.odom.pose.pose.position.y, self.odom.pose.pose.position.z])
+        self.t = self.get_time_from_position(curr_pos)
+
+        pos = self.tr.eval(self.t).pos
+        dist = np.linalg.norm(curr_pos-pos)
+        while (dist < self.new_ref_dist_threshold):
+
+            if self.t + 0.1 >= self.tr.duration:
+                self.t = self.tr.duration
+                break
+            else:
+                self.t += 0.1
+
+            pos = self.tr.eval(self.t).pos
+            dist = np.linalg.norm(curr_pos-pos)
+
+    def get_time_from_position(self, pos: list):
+        """
+        input: pos: position that want to get time of  [x,y,z]
+        Returns the time corresponding to the position in the trajectory
+        """
+        if self.tr == None:
+            raise Exception("No trajectory received yet")
+
+        number_of_time_intervals = 20
+        dt = self.tr.duration/number_of_time_intervals
+
+        t_min = 0
+        min_dist = np.inf
+        for i in range(number_of_time_intervals):
+            t = i*dt
+            if t > self.tr.duration:
+                break
+
+            dist = np.linalg.norm(pos-self.tr.eval(t).pos)
+            if dist < min_dist:
+                min_dist = dist
+                t_min = t
+
+        return t_min
 
     def tick(self):
         if self.tr == None:
@@ -166,10 +219,11 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
 
         self.update_time()
 
+        self.t = min([self.tr.duration, self.t])
         pos = np.array(self.tr.eval(self.t).pos)
-        vel = np.array(self.tr.eval(self.t).vel)
 
-        print("t:{} going to pos with vel{} --> {}".format(self.t, pos, vel))
+        # vel = np.array(self.tr.eval(self.t).vel)
+        # print("t:{} going to pos with vel{} --> {}".format(self.t, pos, vel))
 
         # create pose to publish
         pose = PoseStamped()
@@ -212,10 +266,10 @@ def build_matrix_from_traj_msg(piece_pol):
     # 8 coeffs per x,y,z,yaw + 1 for duration
     matrix = np.zeros((lines, 1+8*4))
     matrix[:, 0] = durations.flatten()
-    matrix[:, 1:9] = x
-    matrix[:, 9:17] = y
-    matrix[:, 17:25] = z
-    matrix[:, 25:33] = yaw
+    matrix[:, 1: 9] = x
+    matrix[:, 9: 17] = y
+    matrix[:, 17: 25] = z
+    matrix[:, 25: 33] = yaw
 
     return matrix
 
@@ -234,10 +288,10 @@ def piece_pol_to_traj(piece_pol: TrajectoryPolynomialPieceMarios) -> uav_traject
 
     matrix = np.zeros((lines, 1+8*4))
     matrix[:, 0] = durations.flatten()
-    matrix[:, 1:9] = x
-    matrix[:, 9:17] = y
-    matrix[:, 17:25] = z
-    matrix[:, 25:33] = yaw
+    matrix[:, 1: 9] = x
+    matrix[:, 9: 17] = y
+    matrix[:, 17: 25] = z
+    matrix[:, 25: 33] = yaw
 
     tr = uav_trajectory.Trajectory()
     tr.load_from_matrix(matrix)
