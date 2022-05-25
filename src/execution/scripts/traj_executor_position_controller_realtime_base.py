@@ -174,6 +174,8 @@ class TrajectoryExecutor_Position_Controller_Realtime_Base:
         curr_pos = np.array([self.odom.pose.pose.position.x, self.odom.pose.pose.position.y, self.odom.pose.pose.position.z])
         self.t = self.get_time_from_position(curr_pos)
 
+        self.t = min([self.tr.duration, self.t])
+
         pos = self.tr.eval(self.t).pos
         dist = np.linalg.norm(curr_pos-pos)
         while (dist < self.new_ref_dist_threshold):
