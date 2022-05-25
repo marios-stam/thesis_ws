@@ -12,13 +12,12 @@
 ## Visualization
 
 - [ ] Visualize the V shape dynamically (plot Overlay)
-- [ ] Visualize V shape frame along the drones while moving (all synchronised)
+- [x] Visualize V shape frame along the drones while moving (all synchronised)
 
 ## Planning
 
-- [ ] ~~Execute trajectory going to first waypoint of trajectory~~ (not necessary )
-- [ ] Realtime Cylinders with different orientations
+- [x] Realtime Cylinders with different orientations
 
 ## Writing
 
-- [ ]Find a better way of naming the whole degrees of freedom reducing mechanism
+- [-]Find a better way of naming the whole degrees of freedom reducing mechanism
