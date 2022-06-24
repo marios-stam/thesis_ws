@@ -359,10 +359,10 @@ def planning_before_take_off():
     print("Leader waiting Folllower to stabilize...")
     executor_pos.wait_follower_to_stabilize()
 
+    use_already_generated_trajectories()  # TODO: remove this in real flight
+
     executor_pos.wait_to_receive_traj_msg()
     rospy.sleep(1)  # wait for the trajectory to be received from follower as well
-
-    use_already_generated_trajectories()  # TODO: remove this in real flight
 
     matrix = executor_pos.matrix
     executor_pos.execute_trajectory_testing_leader_follower(matrix, relative=False)
@@ -421,10 +421,6 @@ if __name__ == "__main__":
 
     pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
 
-    # waiting for the follower to be ready and connect to the leader
-    # while start_traj_publisher.get_num_connections() < 1:
-    #     check_ctrl_c()
-
     print("Waiting to connect to reference topic..")
     while pos_pub.get_num_connections() < 1:
         check_ctrl_c()
@@ -448,6 +444,10 @@ if __name__ == "__main__":
     sync_pub = rospy.Publisher('sync', Bool, queue_size=10)
 
     start_planning_publisher = rospy.Publisher('/start_planning', planning_state, queue_size=10)
+
+    # waiting for the follower to be ready and connect to the leader
+    while start_traj_publisher.get_num_connections() < 1:
+        check_ctrl_c()
 
     planning_time = rospy.get_param("/planning_time")
     # test_leader_follower()

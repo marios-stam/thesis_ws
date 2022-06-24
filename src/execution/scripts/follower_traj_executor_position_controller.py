@@ -165,7 +165,7 @@ class TrajectoryExecutor_Position_Controller:
     def receive_leader_pose(self, msg):
         if self.leader_started_trajectory_flag == False:
             # Leader has not started the trajectory yet
-            print("Leader has not started the trajectory yet")
+            print("FOLLOWER:Leader has not started the trajectory yet")
             return 0
 
         if self.traj_matcher == None or self.tr == None:
@@ -178,8 +178,8 @@ class TrajectoryExecutor_Position_Controller:
         self.leader_pose = msg
         try:
             t = self.traj_matcher.get_corresponding_t(self.leader_pose.pose.position)
-        except:
-            print("Error in getting corresponding t")
+        except Exception as e:
+            print("Error in getting corresponding t:", str(e))
             return
 
         evaluation = self.tr.eval(t)
@@ -347,17 +347,17 @@ def planning_before_take_off():
     follower_tr.loadcsv(follower_traj_file, skip_first_row=False)
     executor_pos.tr = follower_tr
 
+    use_already_generated_trajectories()  # TODO: remove this in real flight
+
     # wait until stabilize after take off
     executor_pos.wait_to_stabilize()
 
     executor_pos.wait_for_leader_sync()
     print("FOLLOWER:Received SYNC signal...")
 
-    use_already_generated_trajectories()  # TODO: remove this in real flight
-
     # Go to start position
     pos = executor_pos.tr.eval(0.0).pos
-    print("Follower going to pose:", pos)
+    print("Follower going to start pose:", pos)
 
     offset = [0, 0, 0]
     publish_traj_as_path(executor_pos.tr, offset, path_pub)
@@ -388,21 +388,21 @@ if __name__ == "__main__":
     executor_id = get_executor_id(cf_name)
     leader_id = get_executor_id(leader_cf_name)
 
-    print("Executor follower position controller with id:", executor_id)
-    print("Leader position controller with id:", leader_id)
+    print("FOLLOWER:Executor follower position controller with id:", executor_id)
+    print("FOLLOWER:Leader position controller with id:", leader_id)
 
     safety_land_publisher = rospy.Publisher('safety_land', String, queue_size=10)
     pos_pub = rospy.Publisher('reference', PoseStamped, queue_size=10)
 
-    # print("Waiting to connect to reference topic..")
-    # while pos_pub.get_num_connections() < 1:
-    #     if rospy.is_shutdown():
-    #         sys.exit()
+    print("FOLLOWER:Waiting to connect to reference topic..")
+    while pos_pub.get_num_connections() < 1:
+        if rospy.is_shutdown():
+            sys.exit()
 
-    print("Connected to reference topic")
+    print("FOLLOWER:Connected to reference topic")
     executor_pos = TrajectoryExecutor_Position_Controller()
     odom_topic = '/pixy/vicon/demo_crazyflie{}/demo_crazyflie{}/odom'.format(executor_id, executor_id)
-    print("odom_topic:", odom_topic)
+    print("FOLLOWER: odom_topic:", odom_topic)
     odometry_sub = rospy.Subscriber(odom_topic, Odometry, executor_pos.odometry_callback)
 
     leader_sub = rospy.Subscriber('/cf_leader/reference', PoseStamped, executor_pos.receive_leader_pose)
@@ -419,7 +419,7 @@ if __name__ == "__main__":
     sync_sub = rospy.Subscriber('/cf_leader/sync', Bool, executor_pos.leader_sync_callback)
 
     # Wait for odometry
-    print("Waiting for odometry to be ready..")
+    print("FOLLOWER:Waiting for odometry to be ready..")
     executor_pos.wait_for_odometry()
 
     planning_time = rospy.get_param("/planning_time")
