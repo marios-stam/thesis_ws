@@ -44,7 +44,7 @@ class Drone_transform_updater:
 
     def update_trajectory(self, tr: uav_trajectory.Trajectory):
         first_pos = np.array(tr.eval(0).pos)
-        print("First velocity: {}".format(tr.eval(0).vel))
+        # print("First velocity: {}".format(tr.eval(0).vel))
         # If it is the first time it receives traj set prev_pos to init pos
         if self.tr == None:
             self.prev_pos = first_pos
@@ -189,8 +189,11 @@ if __name__ == "__main__":
     rate = rospy.Rate(f)
     while not rospy.is_shutdown():
 
-        drone1.tick()
-        drone2.tick()
+        try:
+            drone1.tick()
+            drone2.tick()
+        except Exception as e:
+            print(e)
 
         rate.sleep()
 

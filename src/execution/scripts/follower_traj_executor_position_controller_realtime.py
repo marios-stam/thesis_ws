@@ -67,7 +67,9 @@ class TrajectoryExecutor_Position_Controller_Follower(TrajectoryExecutor_Positio
             print("Error in getting corresponding t")
             return
 
+        t = min(t, self.tr.duration)
         evaluation = self.tr.eval(t)
+
         pos, yaw = evaluation.pos, evaluation.yaw
         x, y, z = pos[0], pos[1], pos[2]
         # print("Follower:", "t:", t, "  ======> Going at :" "x:", x, "y:", y, "z:", z, "yaw:", yaw)
