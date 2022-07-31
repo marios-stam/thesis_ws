@@ -1,7 +1,12 @@
 <?xml version="1.0"?>
 <launch>
+	<!-- THESE SHOULD NOT BE HERE -->
+	<arg name="planning_time" value="before_take_off" /> 
+	<param name="planning_time" type="string" value="$(arg planning_time)" />
+	<!--==========================-->
+
 	<!-- ================================ LEADER ================================ -->
-	<arg name="cf_leader_name" value="demo_crazyflie10" />
+	<arg name="cf_leader_name" value="demo_crazyflie5" />
 	<!-- initial reference -->
 	<arg name="cf_1_x" value="0  " /> 
 	<arg name="cf_1_y" value="4  " />
@@ -9,15 +14,15 @@
 	<!-- ================================ /LEADER ================================ -->
 
 	<!-- =============================== FOLLOWER =============================== -->
-	<arg name="cf_follower_name" value="demo_crazyflie9" />
+	<arg name="cf_follower_name" value="demo_crazyflie12" />
 	<!-- initial reference -->
   	<arg name="cf_2_x" value="-1" />
 	<arg name="cf_2_y" value=" 4" />
 	<arg name="cf_2_z" value=" 0.5" />
 	<!-- =============================== /FOLLOWER =============================== -->
-	
-	<param name="cf_leader_traj"   value="$(find drone_path_planning)/resources/trajectories/small-hole/Pol_matrix_leader.csv" />
-	<param name="cf_follower_traj" value="$(find drone_path_planning)/resources/trajectories/small-hole/Pol_matrix_follower.csv" />
+
+	<param name="cf_leader_traj"   value="$(find drone_path_planning)/resources/trajectories/light_rope_trajs/hole-wide/Pol_matrix_leader.csv" />
+	<param name="cf_follower_traj" value="$(find drone_path_planning)/resources/trajectories/light_rope_trajs/hole-wide/Pol_matrix_follower.csv" />
 
 	<!-- Initialize global parameters -->
 	<param name="cf_leader_name" type="string" value="$(arg cf_leader_name)" />

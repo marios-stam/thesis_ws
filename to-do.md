@@ -17,6 +17,9 @@
 ## Planning
 
 - [x] Realtime Cylinders with different orientations
+- [ ] Make all ROS_ERRORS into ROS_INFO (for debugging) in order to know all the real errors
+- [ ] Chexk if changing the sign of dstart have better effects
+- [ ] Use checkAndRepair() function first instead of replanning
 
 ## Writing
 

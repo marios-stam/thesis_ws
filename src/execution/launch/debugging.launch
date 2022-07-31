@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <launch>
 
-	<param name="/planning/rope_length" value="1.5"/>
+	<param name="/planning/rope_length" value="1.3"/>
 
-	<arg name="cf_leader_name" value="demo_crazyflie10" />
+	<arg name="cf_leader_name" value="crazyflie8" />
 	<!-- initial reference -->
 	<arg name="cf_1_x" value="0" /> 
 	<arg name="cf_1_y" value="4" />
@@ -14,7 +14,7 @@
 	<param name="cf_leader_z" type="double" value="$(arg cf_1_z)" />
 
 
-	<arg name="cf_follower_name" value="demo_crazyflie9" />
+	<arg name="cf_follower_name" value="demo_crazyflie11" />
 	<!-- initial reference -->
   	<arg name="cf_2_x" value="-1" />
 	<arg name="cf_2_y" value=" 4" />
@@ -53,6 +53,7 @@
 	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-corridor-narrow.dae" />	 -->
 	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-corridor-narrow-easy.dae" />	 -->
 	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-small-hole.dae" /> -->
+	<arg name="env_mesh_path" value="drones_rope_planning/resources/collada/boxes_mlkia2.dae" />
 	<!-- <arg name="env_mesh_path" value="drone_path_planning/resources/collada/env-scene-ltu-experiment-tunnel2.dae" />	 -->
 	
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find execution)/launch/formation.rviz" output="log"/>

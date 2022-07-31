@@ -13,3 +13,8 @@ src/execution/scripts/hummingbird3.py
 src/execution/scripts/open_gen.py
 
 src/execution/scripts/MAV*
+
+bags/05-23/*
+bags/05-25/*
+bags/05-27/*
+bags/05-28/*
